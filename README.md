@@ -342,3 +342,78 @@ Homescreen Icons are from [Solar Broken Line Icons](https://www.svgrepo.com/coll
 We hope you enjoy SaaS Starter! If you build mobile apps, please check out its sponsor/creator.
 
 **[Kiln AI](https://getkiln.ai):** Free apps and tools for building high quality AI products.
+
+
+
+
+----------------------------------------------------------------------
+## New Readme for the project
+
+
+
+
+
+
+Current Tree of the project from running ``tree -L 4 -I 'node_modules'``
+.
+├── LICENSE
+├── README.md
+├── SECURITY.md
+├── analytics_docs.md
+├── checks.sh
+├── database_migration.sql
+├── email_docs.md
+├── package-lock.json
+├── package.json
+├── postcss.config.js
+├── src
+│   ├── DatabaseDefinitions.ts
+│   ├── ambient.d.ts
+│   ├── app.css
+│   ├── app.d.ts
+│   ├── app.html
+│   ├── config.ts
+│   ├── hooks.server.ts
+│   ├── index.test.ts
+│   ├── lib
+│   │   ├── build_index.ts
+│   │   ├── emails
+│   │   │   ├── welcome_email_html.hbs
+│   │   │   └── welcome_email_text.hbs
+│   │   ├── index.js
+│   │   ├── load_helpers.ts
+│   │   ├── mailer.test.ts
+│   │   └── mailer.ts
+│   └── routes
+│       ├── (admin)
+│       │   └── account
+│       ├── (marketing)
+│       │   ├── +layout.svelte
+│       │   ├── +page.svelte
+│       │   ├── +page.ts
+│       │   ├── auth
+│       │   ├── blog
+│       │   ├── contact_us
+│       │   ├── login
+│       │   ├── pricing
+│       │   ├── search
+│       │   └── sitemap.xml
+│       ├── +error.svelte
+│       └── +layout.svelte
+├── static
+│   ├── favicon.png
+│   ├── images
+│   │   ├── cm_logo.svg
+│   │   ├── example-home.png
+│   │   └── rss.svg
+│   └── robots.txt
+├── supabase
+│   └── migrations
+│       ├── 20240730010101_initial.sql
+│       └── 20240731051052_add_unsubscribed_to_profiles.sql
+├── svelte.config.js
+├── tailwind.config.js
+├── tsconfig.json
+└── vite.config.ts
+
+19 directories, 41 files

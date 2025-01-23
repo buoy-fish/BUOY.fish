@@ -4,6 +4,7 @@
     WebsiteBaseUrl,
     WebsiteDescription,
   } from "./../../config"
+  import { onMount } from "svelte"
 
   const ldJson = {
     "@context": "https://schema.org",
@@ -14,6 +15,62 @@
   const jsonldScript = `<script type="application/ld+json">${
     JSON.stringify(ldJson) + "<"
   }/script>`
+
+  // Typewriter effect
+  let showTypewriter = false
+  let text = ""
+  const staticWord = "Building"
+  const typingText = "technology to improve our oceans"
+  let animationInterval: ReturnType<typeof setInterval>
+
+  const VIDEO_DURATION = 30000 // 30 seconds in milliseconds
+  const TEXT_START_DELAY = 10000 // When text starts appearing
+  const FADE_OUT_TIME = 28000 // When text starts fading
+  let videoElement: HTMLVideoElement
+
+  onMount(() => {
+    if (videoElement) {
+      // Initial animation start
+      startAnimationCycle()
+
+      // Listen for video loops
+      videoElement.addEventListener("timeupdate", () => {
+        // Check if video has looped (currentTime near 0)
+        if (videoElement.currentTime < 0.1) {
+          startAnimationCycle()
+        }
+      })
+
+      // Cleanup on unmount
+      return () => {
+        videoElement.removeEventListener("timeupdate", () => {})
+      }
+    }
+  })
+
+  function startAnimationCycle() {
+    // Reset everything at start of cycle
+    text = ""
+    showTypewriter = false
+
+    // Start typing after delay
+    setTimeout(() => {
+      showTypewriter = true
+      typeText()
+    }, TEXT_START_DELAY)
+
+    // Fade out everything together
+    setTimeout(() => {
+      showTypewriter = false
+    }, FADE_OUT_TIME)
+  }
+
+  async function typeText() {
+    for (let i = 0; i <= typingText.length; i++) {
+      text = typingText.slice(0, i)
+      await new Promise((resolve) => setTimeout(resolve, 112))
+    }
+  }
 
   const features = [
     {
@@ -225,74 +282,43 @@
 <svelte:head>
   <title>{WebsiteName}</title>
   <meta name="description" content={WebsiteDescription} />
-  <!-- eslint-disable-next-line svelte/no-at-html-tags -->
   {@html jsonldScript}
 </svelte:head>
 
-<div class="hero min-h-[60vh]">
-  <div class="hero-content text-center py-12">
-    <div class="max-w-xl">
-      <div
-        class="text-xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent mb-3 md:mb-7 pb-1"
+<div class="relative min-h-screen w-full">
+  <!-- Full-screen video container -->
+  <div class="absolute inset-0 overflow-hidden">
+    <div class="origin-center rotate-[-0.9deg] w-full h-full scale-125">
+      <video
+        bind:this={videoElement}
+        class="absolute inset-0 w-full h-full object-cover"
+        autoplay
+        muted
+        loop
+        playsinline
       >
-        SaaS Starter Demo
-      </div>
+        <source src="/videos/hero-video.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+    </div>
+    <!-- Softer overlay filter -->
+    <div class="absolute inset-0 bg-black/15"></div>
+  </div>
 
-      <div
-        class="text-4xl md:text-6xl font-bold px-2"
-        style="line-height: 1.2;"
-      >
-        The
-        <span
-          class="underline decoration-secondary decoration-4 md:decoration-[6px]"
-          >open source</span
-        >,
-        <span
-          class="underline decoration-secondary decoration-4 md:decoration-[6px]"
-          >fast</span
-        >, and
-        <span
-          class="underline decoration-secondary decoration-4 md:decoration-[6px]"
-          >free to host</span
+  <!-- Content overlay -->
+  <div class="relative z-5 flex items-center justify-center min-h-screen">
+    <div class="text-center w-full px-4 -mt-32">
+      <h3 class="text-1xl md:text-3xl tracking-wide">
+        <!-- Removed font-light -->
+        <div
+          class="max-w-[800px] mx-auto text-left transition-opacity duration-1000 ease-in-out pl-16 text-[#1E3A8A] font-bold"
+          class:opacity-0={!showTypewriter}
+          class:opacity-100={showTypewriter}
         >
-        <span> SaaS template</span>
-      </div>
-      <div class="mt-6 md:mt-10 text-sm md:text-lg">
-        Built with <a
-          href="https://kit.svelte.dev"
-          class="link font-bold"
-          target="_blank">SvelteKit</a
-        >,
-        <a href="https://supabase.com" class="link font-bold" target="_blank"
-          >Supabase</a
-        >,
-        <a href="https://stripe.com" class="link font-bold" target="_blank"
-          >Stripe</a
-        >,
-        <a href="https://tailwindcss.com" class="link font-bold" target="_blank"
-          >Tailwind</a
-        >,
-        <a href="https://daisyui.com" class="link font-bold" target="_blank"
-          >DaisyUI</a
-        >, and
-        <a
-          href="https://www.postgresql.org"
-          class="link font-bold"
-          target="_blank">Postgres</a
-        >
-      </div>
-      <div class="mt-6 md:mt-2">
-        <a href="https://github.com/CriticalMoments/CMSaasStarter">
-          <button class="btn btn-primary btn-sm px-6">★ us on Github</button>
-        </a>
-        <a
-          href="https://github.com/CriticalMoments/CMSaasStarter/tree/main#saas-starter"
-        >
-          <button class="btn btn-outline btn-primary btn-sm px-6 mt-3 mx-2"
-            >Read the Docs</button
-          >
-        </a>
-      </div>
+          <span class="inline-block">{staticWord}&nbsp;</span>
+          <span class="inline-block">{text}</span>
+        </div>
+      </h3>
     </div>
   </div>
 </div>
@@ -302,10 +328,10 @@
       <div
         class="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent pb-2"
       >
-        Explore the Features
+        Why buoy.fish?
       </div>
       <div class="mt-4 text-xl font-bold">
-        And try them on this
+        Cost effective location aware fishing gear
         <span
           class="underline decoration-secondary decoration-[3px] md:decoration-[4px]"
         >
