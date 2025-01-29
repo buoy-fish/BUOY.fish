@@ -45,7 +45,7 @@
           </li>
           <li>
             <a
-              href="app.buoy.fish"
+              href="https://app.buoy.fish"
               class="hover:bg-[#00A7E1] hover:text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl text-[#1E3A8A]"
               >App</a
             >

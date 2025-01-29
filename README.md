@@ -258,6 +258,20 @@ If you find build, formatting or linting rules too tedious, you can disable enfo
     - Optional: setup a custom domain so Stripe pages use your own domain
 - Repeat steps in production environment
 
+## Staging
+
+To enable staging, set the PUBLIC_SITE_ACCESS environment variable to "public" in your .env.local file.
+
+### For staging (password protected)
+```
+npm run build -- --mode staging
+```
+
+### For production (public)
+```
+npm run build -- --mode production
+```
+
 ## Deploy
 
 We have two documented options for deploying SaaS Starter: Cloudflare Pages and Vercel. However, it can be hosted anywhere you can host a SvelteKit app.

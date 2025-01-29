@@ -23,9 +23,11 @@
   const typingText = "technology to improve our oceans"
   let animationInterval: ReturnType<typeof setInterval>
 
-  const VIDEO_DURATION = 30000 // 30 seconds in milliseconds
-  const TEXT_START_DELAY = 10000 // When text starts appearing
-  const FADE_OUT_TIME = 28000 // When text starts fading
+  // Typewriter effect timing constants
+  const VIDEO_DURATION = 27000 // 27 seconds
+  const TEXT_START_DELAY = 10000 // when text starts appearing (9s into video)
+  const FADE_OUT_TIME = 20000 // when text starts fading out (20s into video)
+
   let videoElement: HTMLVideoElement
 
   onMount(() => {
@@ -297,7 +299,7 @@
         loop
         playsinline
       >
-        <source src="/videos/hero-video.mp4" type="video/mp4" />
+        <source src="/videos/hero-video-optimized.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
     </div>
