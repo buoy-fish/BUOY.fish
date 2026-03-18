@@ -99,39 +99,40 @@ const authGuard: Handle = async ({ event, resolve }) => {
 
 // Simplified password protection
 const passwordProtect: Handle = async ({ event, resolve }) => {
-    // Clear any existing cookies at startup
-    event.cookies.delete('authorized', { path: '/' });
-
     // If site is public, skip password protection
     if (PUBLIC_SITE_ACCESS === 'public') {
         return resolve(event);
     }
 
     // Skip auth for static assets
-    if (event.url.pathname.startsWith('/videos') || 
+    if (event.url.pathname.startsWith('/videos') ||
         event.url.pathname.startsWith('/images') ||
         event.url.pathname.startsWith('/_app')) {
         return resolve(event);
     }
 
-    const authorized = event.cookies.get('authorized');
-    
     // If already authorized with cookie, proceed
-    if (authorized === 'true' && event.cookies.get('authorized') !== undefined) {
+    const authorized = event.cookies.get('authorized');
+    if (authorized === 'true') {
         return resolve(event);
     }
 
-    let password = null;
-    try {
-        password = event.url.searchParams.get('password');
-    } catch {
-        console.log('[Password Protection] Could not access searchParams - likely prerendering');
-    }
+    // Check if password was submitted
+    const password = event.url.searchParams.get('password');
 
     if (password === SITE_PASSWORD) {
-        const response = await resolve(event);
-        response.headers.append('Set-Cookie', 'authorized=true; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400');
-        return response;
+        // Set cookie via SvelteKit's cookies API so it persists across requests
+        event.cookies.set('authorized', 'true', {
+            path: '/',
+            httpOnly: true,
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 24, // 24 hours
+        });
+        // Redirect to the same page without the password in the URL
+        return new Response(null, {
+            status: 302,
+            headers: { location: event.url.pathname },
+        });
     }
 
     // Show password page if not authorized
@@ -166,14 +167,14 @@ const passwordProtect: Handle = async ({ event, resolve }) => {
                         font-size: 16px;
                     }
                     button {
-                        background: #0066cc;
+                        background: #1556ac;
                         color: white;
                         border: none;
                         cursor: pointer;
                         transition: background 0.2s;
                     }
                     button:hover {
-                        background: #0052a3;
+                        background: #3b82f6;
                     }
                     .exit-button {
                         background: #f0f0f0;

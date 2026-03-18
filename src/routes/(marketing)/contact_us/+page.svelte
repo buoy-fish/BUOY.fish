@@ -79,17 +79,16 @@
   >
     <div class="px-6">
       <h1 class="text-2xl lg:text-4xl font-bold mb-4">Contact Us</h1>
-      <p class="text-lg">Talk to one of our service professionals to:</p>
+      <p class="text-lg">We'd love to hear from you! Reach out to:</p>
       <ul class="list-disc list-outside pl-6 py-4 space-y-1">
-        <li class="">Get a live demo</li>
-        <li class="">Discuss your specific needs</li>
-        <li>Get a quote</li>
-        <li>Answer any technical questions you have</li>
+        <li>See a live demo of gear tracking</li>
+        <li>Discuss deployment for your fleet</li>
+        <li>Learn about our active trials</li>
+        <li>Get technical specifications</li>
       </ul>
-      <p>Once you complete the form, we'll reach out to you! *</p>
+      <p>Once you complete the form, we'll be in touch!</p>
       <p class="text-sm pt-8">
-        *Not really for this demo page, but you should say something like that
-        😉
+        Or email us directly at <a href="mailto:hello@buoy.fish" class="link">hello@buoy.fish</a>
       </p>
     </div>
   </div>
