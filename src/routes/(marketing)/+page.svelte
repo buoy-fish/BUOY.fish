@@ -5,19 +5,39 @@
     WebsiteBaseUrl,
     WebsiteDescription,
   } from "./../../config"
-  import { onMount } from "svelte"
+  import { onMount, onDestroy } from "svelte"
 
   let videoElement: HTMLVideoElement
 
-  // Typewriter effect variables
+  // Typewriter effect
   let showTypewriter = false
   let text = ""
   const staticWord = "BUOY.fish"
   const typingText = "let's solve lost and abandoned fishing gear"
 
-  // Typewriter effect timing constants
-  const TEXT_START_DELAY = 10000 // when text starts appearing (10s into video)
-  const FADE_OUT_TIME = 20000 // when text starts fading out (20s into video)
+  // Inspector HUD state
+  let showHud = false
+  let hudLat = 26.7142
+  let hudLon = -113.5721
+  let hudBatteryPct = 87
+  let hudBatteryV = 3.82
+  let hudTemp = 18.3
+  let hudRssi = -92
+  let hudSnr = 7.2
+  let hudSeq = 4217
+  let hudLastPing = "just now"
+
+  // Animation timing thresholds (seconds, synced to video currentTime)
+  const HUD_IN = 2.5
+  const TEXT_IN = 10
+  const ALL_OUT = 20
+
+  // Track state to avoid re-triggering on every timeupdate
+  let hudActive = false
+  let typewriterStarted = false
+  let lastDataUpdate = 0
+  let lastCoordUpdate = 0
+  let pingStart = 0
 
   const ldJson = {
     "@context": "https://schema.org",
@@ -27,9 +47,50 @@
   }
   const jsonldScript = `<script type="application/ld+json">${JSON.stringify(ldJson) + "<"}/script>`
 
-  onMount(() => {
-    startAnimationCycle()
-  })
+  function drift(base: number, range: number): number {
+    return base + (Math.random() - 0.5) * range
+  }
+
+  function resetHudValues() {
+    hudLat = 26.7142
+    hudLon = -113.5721
+    hudBatteryPct = 87
+    hudBatteryV = 3.82
+    hudTemp = 18.3
+    hudRssi = -92
+    hudSnr = 7.2
+    hudSeq = 4217
+    hudLastPing = "just now"
+    lastDataUpdate = 0
+    lastCoordUpdate = 0
+    pingStart = 0
+  }
+
+  function updateHudData(t: number) {
+    // Coordinate drift every ~2s
+    if (t - lastCoordUpdate >= 2) {
+      hudLat = drift(hudLat, 0.0003)
+      hudLon = drift(hudLon, 0.0003)
+      lastCoordUpdate = t
+    }
+
+    // Data tick every ~3s
+    if (t - lastDataUpdate >= 3) {
+      hudSeq += 1
+      hudTemp = drift(18.3, 0.4)
+      hudBatteryV = drift(3.82, 0.02)
+      hudBatteryPct = Math.round(drift(87, 1))
+      hudRssi = Math.round(drift(-92, 3))
+      hudSnr = drift(7.2, 0.5)
+      lastDataUpdate = t
+    }
+
+    // Last ping counter
+    const elapsed = Math.floor(t - pingStart)
+    if (elapsed < 3) hudLastPing = "just now"
+    else if (elapsed < 60) hudLastPing = `${elapsed}s ago`
+    else hudLastPing = `${Math.floor(elapsed / 60)}m ago`
+  }
 
   async function typeText() {
     for (let i = 0; i <= typingText.length; i++) {
@@ -38,18 +99,63 @@
     }
   }
 
-  function startAnimationCycle() {
-    // Start typing after 10 seconds
-    setTimeout(() => {
+  function handleTimeUpdate() {
+    if (!videoElement) return
+    const t = videoElement.currentTime
+
+    // Reset everything when video loops (currentTime jumps back)
+    if (t < HUD_IN) {
+      if (hudActive) {
+        showHud = false
+        showTypewriter = false
+        hudActive = false
+        typewriterStarted = false
+      }
+      return
+    }
+
+    // Fade out zone
+    if (t >= ALL_OUT) {
+      showHud = false
+      showTypewriter = false
+      hudActive = false
+      typewriterStarted = false
+      return
+    }
+
+    // HUD active zone
+    if (t >= HUD_IN && !hudActive) {
+      resetHudValues()
+      pingStart = t
+      lastCoordUpdate = t
+      lastDataUpdate = t
+      showHud = true
+      hudActive = true
+    }
+
+    if (hudActive) {
+      updateHudData(t)
+    }
+
+    // Typewriter
+    if (t >= TEXT_IN && !typewriterStarted) {
+      typewriterStarted = true
       showTypewriter = true
       typeText()
-    }, TEXT_START_DELAY)
-
-    // Fade out after 20 seconds
-    setTimeout(() => {
-      showTypewriter = false
-    }, FADE_OUT_TIME)
+    }
   }
+
+  onMount(() => {
+    if (videoElement) {
+      videoElement.addEventListener("timeupdate", handleTimeUpdate)
+    }
+  })
+
+  onDestroy(() => {
+    if (videoElement) {
+      videoElement.removeEventListener("timeupdate", handleTimeUpdate)
+    }
+  })
 </script>
 
 <svelte:head>
@@ -59,7 +165,7 @@
 </svelte:head>
 
 <!-- Hero Video Section -->
-<div class="relative h-screen w-full">
+<div class="relative h-screen w-full overflow-hidden">
   <video
     bind:this={videoElement}
     class="absolute inset-0 w-full h-full object-cover"
@@ -72,12 +178,91 @@
     <source src="/videos/hero-video-optimized.mp4" type="video/mp4" />
   </video>
 
+  <!-- Inspector HUD Overlay -->
+  {#if showHud}
+    <div
+      class="absolute top-[20%] left-6 md:left-[12%] z-20 w-[280px] md:w-[320px]"
+      transition:fade={{ duration: 800 }}
+    >
+      <div class="hud-panel rounded-xl p-4 font-mono text-sm">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
+          <div>
+            <div class="text-white font-bold text-base tracking-wide">Abreojos-042</div>
+            <div class="text-white/50 text-xs">Smart Buoy</div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+            <span class="text-green-400 text-xs font-semibold">LIVE</span>
+          </div>
+        </div>
+
+        <!-- Coordinates -->
+        <div class="grid grid-cols-2 gap-x-4 gap-y-2 mb-3">
+          <div>
+            <div class="hud-label">LAT</div>
+            <div class="hud-value">{hudLat.toFixed(4)}&deg;</div>
+          </div>
+          <div>
+            <div class="hud-label">LON</div>
+            <div class="hud-value">{hudLon.toFixed(4)}&deg;</div>
+          </div>
+        </div>
+
+        <!-- Battery & Temp -->
+        <div class="grid grid-cols-2 gap-x-4 gap-y-2 mb-3">
+          <div>
+            <div class="hud-label">BATTERY</div>
+            <div class="hud-value">{hudBatteryPct}%
+              <span class="text-white/40 text-xs ml-1">{hudBatteryV.toFixed(2)}v</span>
+            </div>
+            <!-- Battery bar -->
+            <div class="w-full h-1.5 bg-white/10 rounded-full mt-1">
+              <div
+                class="h-full rounded-full transition-all duration-1000"
+                class:bg-green-400={hudBatteryPct > 50}
+                class:bg-yellow-400={hudBatteryPct <= 50 && hudBatteryPct > 20}
+                class:bg-red-400={hudBatteryPct <= 20}
+                style="width: {hudBatteryPct}%"
+              ></div>
+            </div>
+          </div>
+          <div>
+            <div class="hud-label">TEMP</div>
+            <div class="hud-value">{hudTemp.toFixed(1)}&deg;C
+              <span class="text-white/40 text-xs ml-1">{(hudTemp * 9/5 + 32).toFixed(1)}&deg;F</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Signal & Seq -->
+        <div class="grid grid-cols-2 gap-x-4 gap-y-2 mb-3">
+          <div>
+            <div class="hud-label">RSSI / SNR</div>
+            <div class="hud-value text-xs">{hudRssi} dBm / {hudSnr.toFixed(1)}</div>
+          </div>
+          <div>
+            <div class="hud-label">SEQ</div>
+            <div class="hud-value">#{hudSeq}</div>
+          </div>
+        </div>
+
+        <!-- Last Ping -->
+        <div class="flex items-center justify-between pt-2 border-t border-white/10">
+          <div class="hud-label">LAST PING</div>
+          <div class="text-green-400 text-xs font-semibold">{hudLastPing}</div>
+        </div>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Typewriter overlay -->
   <div
     class="relative z-10 flex flex-col items-center justify-center h-full"
   >
     {#if showTypewriter}
       <div
-        class="max-w-[800px] mx-auto text-left pl-16 text-secondary font-bold"
+        class="max-w-[800px] mx-auto text-left pl-8 md:pl-16 text-secondary font-bold"
         transition:fade
       >
         <h1 class="text-4xl md:text-6xl mb-4">{staticWord}</h1>
@@ -233,3 +418,28 @@
     <p class="text-base-content/60">Fishing Vessel Plumeria, San Francisco, CA</p>
   </div>
 </section>
+
+<style>
+  .hud-panel {
+    background: rgba(10, 20, 40, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .hud-label {
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .hud-value {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+</style>
