@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js"
+import type { SupabaseClient, Session, AMREntry } from "@supabase/supabase-js"
 import { Database } from "./DatabaseDefinitions"
 
 /// <reference types="vite/client" />
@@ -19,7 +19,7 @@ declare global {
       safeGetSession: () => Promise<{
         session: Session | null
         user: User | null
-        amr: AuthenticatorAssuranceLevels | null
+        amr: AMREntry[] | null
       }>
       session: Session | null
       user: User | null
@@ -28,9 +28,6 @@ declare global {
       session: Session | null
     }
     interface Platform {}
-    interface Session {
-      user: User
-    }
     interface Supabase {
       Database: Database
       SchemaName: "public"
