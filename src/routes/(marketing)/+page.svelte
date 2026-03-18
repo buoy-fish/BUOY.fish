@@ -161,6 +161,19 @@
 <svelte:head>
   <title>{WebsiteName}</title>
   <meta name="description" content={WebsiteDescription} />
+  <!-- Open Graph -->
+  <meta property="og:title" content={WebsiteName} />
+  <meta property="og:description" content={WebsiteDescription} />
+  <meta property="og:image" content="{WebsiteBaseUrl}/images/og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:url" content={WebsiteBaseUrl} />
+  <meta property="og:type" content="website" />
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={WebsiteName} />
+  <meta name="twitter:description" content={WebsiteDescription} />
+  <meta name="twitter:image" content="{WebsiteBaseUrl}/images/og-image.jpg" />
   <!-- eslint-disable-next-line svelte/no-at-html-tags -->
   {@html jsonldScript}
 </svelte:head>
@@ -257,7 +270,8 @@
     </div>
   {/if}
 
-  <!-- Typewriter overlay -->
+  <!-- Typewriter overlay — hidden for now; HUD panel is sufficient. Uncomment to restore. -->
+  <!--
   <div
     class="relative z-10 flex flex-col items-center justify-center h-full"
   >
@@ -271,6 +285,7 @@
       </div>
     {/if}
   </div>
+  -->
 
   <!-- Scroll indicator -->
   <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 animate-bounce">
