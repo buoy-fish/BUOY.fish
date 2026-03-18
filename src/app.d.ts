@@ -1,4 +1,4 @@
-import { Session, SupabaseClient, type AMREntry } from "@supabase/supabase-js"
+import type { SupabaseClient } from "@supabase/supabase-js"
 import { Database } from "./DatabaseDefinitions"
 
 /// <reference types="vite/client" />
