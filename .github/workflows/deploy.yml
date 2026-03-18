@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  PUBLIC_SUPABASE_URL: "https://fake_test_url.supabase.co"
+  PUBLIC_SUPABASE_ANON_KEY: "fake_anon_key"
+  PRIVATE_SUPABASE_SERVICE_ROLE: "fake_service_role"
+  PRIVATE_STRIPE_API_KEY: "fake_stripe_api_key"
+  PUBLIC_SITE_ACCESS: "public"
+
 jobs:
   test:
     name: Lint, Check & Test
@@ -17,10 +24,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Lint
         run: npm run lint
@@ -50,10 +56,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build
         run: npm run build
