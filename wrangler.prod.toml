@@ -1,0 +1,18 @@
+# Production Cloudflare Pages configuration for buoy.fish
+name = "buoy-fish-website"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".svelte-kit/cloudflare"
+
+# Environment variables (non-secret)
+# Set these in Cloudflare Dashboard or via wrangler secret put
+[vars]
+PUBLIC_SITE_ACCESS = "public"
+
+# Note: The following must be set as secrets via Cloudflare Dashboard
+# or using: npx wrangler pages secret put SECRET_NAME --project-name=buoy-fish-website
+#
+# Required secrets:
+#   - PUBLIC_SUPABASE_URL
+#   - PUBLIC_SUPABASE_ANON_KEY
+#   - PRIVATE_SUPABASE_SERVICE_ROLE

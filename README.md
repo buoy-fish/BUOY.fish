@@ -431,3 +431,10 @@ Current Tree of the project from running ``tree -L 4 -I 'node_modules'``
 └── vite.config.ts
 
 19 directories, 41 files
+
+
+Up Next. 
+[] Video needs to be resized for mobile
+[] Add favicon
+[] improve site summary/preview pic that gets sent with link
+[] Add a blog
