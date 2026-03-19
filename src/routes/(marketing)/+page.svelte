@@ -9,11 +9,11 @@
 
   let videoElement: HTMLVideoElement
 
-  // Typewriter effect
-  let showTypewriter = false
-  let text = ""
-  const staticWord = "BUOY.fish"
-  const typingText = "let's solve lost and abandoned fishing gear"
+  // Typewriter effect — commented out, kept for future use
+  // let showTypewriter = false
+  // let text = ""
+  // const staticWord = "BUOY.fish"
+  // const typingText = "let's solve lost and abandoned fishing gear"
 
   // Inspector HUD state
   let showHud = false
@@ -28,13 +28,11 @@
   let hudLastPing = "just now"
 
   // Animation timing thresholds (seconds, synced to video currentTime)
-  const HUD_IN = 2.5
-  const TEXT_IN = 10
+  const HUD_IN = 5.5       // delayed to let user take in the video first
   const ALL_OUT = 20
 
   // Track state to avoid re-triggering on every timeupdate
   let hudActive = false
-  let typewriterStarted = false
   let lastDataUpdate = 0
   let lastCoordUpdate = 0
   let pingStart = 0
@@ -92,12 +90,13 @@
     else hudLastPing = `${Math.floor(elapsed / 60)}m ago`
   }
 
-  async function typeText() {
-    for (let i = 0; i <= typingText.length; i++) {
-      text = typingText.slice(0, i)
-      await new Promise((resolve) => setTimeout(resolve, 112))
-    }
-  }
+  // Typewriter function — commented out, kept for future use
+  // async function typeText() {
+  //   for (let i = 0; i <= typingText.length; i++) {
+  //     text = typingText.slice(0, i)
+  //     await new Promise((resolve) => setTimeout(resolve, 112))
+  //   }
+  // }
 
   function handleTimeUpdate() {
     if (!videoElement) return
@@ -107,9 +106,7 @@
     if (t < HUD_IN) {
       if (hudActive) {
         showHud = false
-        showTypewriter = false
         hudActive = false
-        typewriterStarted = false
       }
       return
     }
@@ -117,13 +114,11 @@
     // Fade out zone
     if (t >= ALL_OUT) {
       showHud = false
-      showTypewriter = false
       hudActive = false
-      typewriterStarted = false
       return
     }
 
-    // HUD active zone
+    // HUD card appears
     if (t >= HUD_IN && !hudActive) {
       resetHudValues()
       pingStart = t
@@ -135,13 +130,6 @@
 
     if (hudActive) {
       updateHudData(t)
-    }
-
-    // Typewriter
-    if (t >= TEXT_IN && !typewriterStarted) {
-      typewriterStarted = true
-      showTypewriter = true
-      typeText()
     }
   }
 
@@ -180,6 +168,12 @@
 
 <!-- Hero Video Section -->
 <div class="relative h-screen w-full overflow-hidden">
+  <!-- Poster image shown while video loads (especially helpful on mobile/slow connections) -->
+  <img
+    src="/images/hero-poster.jpg"
+    alt="BUOY.fish hero"
+    class="absolute inset-0 w-full h-full object-cover"
+  />
   <video
     bind:this={videoElement}
     class="absolute inset-0 w-full h-full object-cover"
@@ -187,15 +181,17 @@
     muted
     loop
     playsinline
+    poster="/images/hero-poster.jpg"
   >
     <source src="/videos/hero-video-optimized.webm" type="video/webm" />
     <source src="/videos/hero-video-optimized.mp4" type="video/mp4" />
   </video>
 
-  <!-- Inspector HUD Overlay -->
+  <!-- Inspector HUD Overlay — Desktop: floating card, Mobile: compact top bar -->
   {#if showHud}
+    <!-- Desktop HUD card -->
     <div
-      class="absolute top-[20%] left-6 md:left-[12%] z-20 w-[280px] md:w-[320px]"
+      class="hidden md:block absolute top-[20%] left-[12%] z-20 w-[320px]"
       transition:fade={{ duration: 800 }}
     >
       <div class="hud-panel rounded-xl p-4 font-mono text-sm">
@@ -230,7 +226,6 @@
             <div class="hud-value">{hudBatteryPct}%
               <span class="text-white/40 text-xs ml-1">{hudBatteryV.toFixed(2)}v</span>
             </div>
-            <!-- Battery bar -->
             <div class="w-full h-1.5 bg-white/10 rounded-full mt-1">
               <div
                 class="h-full rounded-full transition-all duration-1000"
@@ -265,6 +260,45 @@
         <div class="flex items-center justify-between pt-2 border-t border-white/10">
           <div class="hud-label">LAST PING</div>
           <div class="text-green-400 text-xs font-semibold">{hudLastPing}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile HUD bar — compact strip below logo + nav links -->
+    <div
+      class="md:hidden absolute top-[120px] left-0 right-0 z-20 px-2"
+      transition:fade={{ duration: 800 }}
+    >
+      <div class="hud-panel rounded-lg px-3 py-2 font-mono text-xs">
+        <!-- Top row: name + live indicator -->
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center gap-2">
+            <span class="text-white font-bold text-sm">Abreojos-042</span>
+            <div class="flex items-center gap-1">
+              <div class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></div>
+              <span class="text-green-400 text-[10px] font-semibold">LIVE</span>
+            </div>
+          </div>
+          <span class="text-green-400 text-[10px] font-semibold">{hudLastPing}</span>
+        </div>
+        <!-- Data row -->
+        <div class="flex items-center justify-between text-[11px]">
+          <div>
+            <span class="hud-label">LAT</span>
+            <span class="text-white/90 ml-1">{hudLat.toFixed(4)}&deg;</span>
+          </div>
+          <div>
+            <span class="hud-label">LON</span>
+            <span class="text-white/90 ml-1">{hudLon.toFixed(4)}&deg;</span>
+          </div>
+          <div>
+            <span class="hud-label">BAT</span>
+            <span class="text-white/90 ml-1">{hudBatteryPct}%</span>
+          </div>
+          <div>
+            <span class="hud-label">TEMP</span>
+            <span class="text-white/90 ml-1">{hudTemp.toFixed(1)}&deg;C</span>
+          </div>
         </div>
       </div>
     </div>
@@ -458,4 +492,5 @@
     font-weight: 500;
     font-variant-numeric: tabular-nums;
   }
+
 </style>

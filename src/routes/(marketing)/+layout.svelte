@@ -9,57 +9,71 @@
   <!-- Navbar overlaid on top -->
   <div class="absolute top-8 left-0 right-0 z-50">
     <div class="navbar bg-transparent w-full px-4">
-      <div class="flex-1">
+      <div class="flex-1 flex items-center">
         <a class="relative group inline-flex ml-6" href="/">
           <img
-            src="/images/buoy_logo.svg"
+            src="/images/buoy_logo_white_bg.png"
             alt={WebsiteName}
-            class="h-12 md:h-16 transition-opacity duration-400 ease-in-out group-hover:opacity-0"
+            class="h-12 md:h-16 rounded-lg transition-opacity duration-300 ease-in-out group-hover:opacity-0"
           />
           <img
-            src="/images/buoy_logo_dark.png"
+            src="/images/buoy_logo_blue_bg.png"
             alt={WebsiteName}
-            class="h-15 md:h-20 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 transition-opacity duration-400 ease-in-out opacity-0 group-hover:opacity-90"
+            class="h-12 md:h-16 rounded-lg absolute inset-0 transition-opacity duration-300 ease-in-out opacity-0 group-hover:opacity-100"
           />
           <span class="sr-only">{WebsiteName}</span>
         </a>
+        <!-- Mobile nav links — right-justified -->
+        <div class="sm:hidden flex items-center gap-1 ml-auto mr-2">
+          <a href="https://app.buoy.fish/demo" class="hover:bg-secondary hover:text-white text-white text-sm font-semibold drop-shadow-lg px-3 py-2 rounded-md transition-colors duration-300">Demo</a>
+          <a href="https://app.buoy.fish" class="hover:bg-secondary hover:text-white text-white text-sm font-semibold drop-shadow-lg px-3 py-2 rounded-md transition-colors duration-300">App</a>
+          <a href="/contact_us" class="hover:bg-secondary hover:text-white text-white text-sm font-semibold drop-shadow-lg px-3 py-2 rounded-md transition-colors duration-300">Contact</a>
+        </div>
+      </div>
+
+      <!-- Centered tagline -->
+      <div class="absolute left-1/2 -translate-x-1/2 hidden md:block">
+        <p class="text-white text-lg font-semibold tracking-wide drop-shadow-lg">
+          Let's solve lost and abandoned fishing gear.
+        </p>
       </div>
 
       <div class="flex-none mr-4">
         <ul
-          class="menu menu-horizontal hidden sm:flex font-extrabold text-xl text-primary gap-10"
+          class="menu menu-horizontal hidden sm:flex font-extrabold text-xl gap-10"
         >
           <li>
             <a
               href="/blog"
-              class="hover:bg-secondary hover:text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl text-primary"
+              class="hover:bg-secondary hover:text-white text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl drop-shadow-lg"
               >Blog</a
             >
           </li>
           <li>
             <a
               href="/contact_us"
-              class="hover:bg-secondary hover:text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl text-primary"
+              class="hover:bg-secondary hover:text-white text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl drop-shadow-lg"
               >Contact Us</a
             >
           </li>
           <li>
             <a
               href="https://app.buoy.fish/demo"
-              class="hover:bg-secondary hover:text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl text-primary"
+              class="hover:bg-secondary hover:text-white text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl drop-shadow-lg"
               >Live Demo</a
             >
           </li>
           <li>
             <a
               href="https://app.buoy.fish"
-              class="hover:bg-secondary hover:text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl text-primary"
+              class="hover:bg-secondary hover:text-white text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl drop-shadow-lg"
               >App</a
             >
           </li>
         </ul>
       </div>
     </div>
+
   </div>
 
   <!-- Footer -->
