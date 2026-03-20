@@ -65,7 +65,7 @@
       darkBg: false,
     },
   ]
-  let scrollY = 0
+  let scrollY = $state(0)
   let taglineOpacity = $derived(Math.max(0, 1 - scrollY / 400))
 
   // Typewriter effect — commented out, kept for future use
@@ -75,16 +75,16 @@
   // const typingText = "let's solve lost and abandoned fishing gear"
 
   // Inspector HUD state
-  let showHud = false
-  let hudLat = 26.7142
-  let hudLon = -113.5721
-  let hudBatteryPct = 87
-  let hudBatteryV = 3.82
-  let hudTemp = 18.3
-  let hudRssi = -92
-  let hudSnr = 7.2
-  let hudSeq = 4217
-  let hudLastPing = "just now"
+  let showHud = $state(false)
+  let hudLat = $state(26.7142)
+  let hudLon = $state(-113.5721)
+  let hudBatteryPct = $state(87)
+  let hudBatteryV = $state(3.82)
+  let hudTemp = $state(18.3)
+  let hudRssi = $state(-92)
+  let hudSnr = $state(7.2)
+  let hudSeq = $state(4217)
+  let hudLastPing = $state("just now")
 
   // Animation timing thresholds (seconds, synced to video currentTime)
   const HUD_IN = 5.5 // delayed to let user take in the video first
