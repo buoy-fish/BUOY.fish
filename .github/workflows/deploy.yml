@@ -1,4 +1,4 @@
-name: Test & Build
+name: Test & Deploy
 
 on:
   push:
@@ -7,14 +7,11 @@ on:
     branches: [main]
 
 env:
-  PUBLIC_SUPABASE_URL: "https://fake_test_url.supabase.co"
-  PUBLIC_SUPABASE_ANON_KEY: "fake_anon_key"
-  PRIVATE_SUPABASE_SERVICE_ROLE: "fake_service_role"
-  PRIVATE_STRIPE_API_KEY: "fake_stripe_api_key"
+  PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL || 'https://fake_test_url.supabase.co' }}
+  PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY || 'fake_anon_key' }}
+  PRIVATE_SUPABASE_SERVICE_ROLE: ${{ secrets.PRIVATE_SUPABASE_SERVICE_ROLE || 'fake_service_role' }}
+  PRIVATE_STRIPE_API_KEY: ${{ secrets.PRIVATE_STRIPE_API_KEY || 'fake_stripe_api_key' }}
   PUBLIC_SITE_ACCESS: "public"
-
-# Deployment is handled by Cloudflare Pages (connected to this repo via Git).
-# This workflow only validates the code — Cloudflare builds and deploys on push.
 
 jobs:
   test:
@@ -42,3 +39,39 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+  deploy:
+    name: Deploy to Cloudflare Pages
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        env:
+          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+          PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
+          PRIVATE_SUPABASE_SERVICE_ROLE: ${{ secrets.PRIVATE_SUPABASE_SERVICE_ROLE }}
+          PRIVATE_STRIPE_API_KEY: ${{ secrets.PRIVATE_STRIPE_API_KEY }}
+          PUBLIC_SITE_ACCESS: "public"
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy .svelte-kit/cloudflare --project-name=buoy-production-website --branch=main --commit-dirty=true
