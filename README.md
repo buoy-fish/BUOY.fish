@@ -263,11 +263,13 @@ If you find build, formatting or linting rules too tedious, you can disable enfo
 To enable staging, set the PUBLIC_SITE_ACCESS environment variable to "public" in your .env.local file.
 
 ### For staging (password protected)
+
 ```
 npm run build -- --mode staging
 ```
 
 ### For production (public)
+
 ```
 npm run build -- --mode production
 ```
@@ -357,18 +359,11 @@ We hope you enjoy SaaS Starter! If you build mobile apps, please check out its s
 
 **[Kiln AI](https://getkiln.ai):** Free apps and tools for building high quality AI products.
 
+---
 
-
-
-----------------------------------------------------------------------
 ## New Readme for the project
 
-
-
-
-
-
-Current Tree of the project from running ``tree -L 4 -I 'node_modules'``
+Current Tree of the project from running `tree -L 4 -I 'node_modules'`
 .
 ├── LICENSE
 ├── README.md
@@ -381,50 +376,50 @@ Current Tree of the project from running ``tree -L 4 -I 'node_modules'``
 ├── package.json
 ├── postcss.config.js
 ├── src
-│   ├── DatabaseDefinitions.ts
-│   ├── ambient.d.ts
-│   ├── app.css
-│   ├── app.d.ts
-│   ├── app.html
-│   ├── config.ts
-│   ├── hooks.server.ts
-│   ├── index.test.ts
-│   ├── lib
-│   │   ├── build_index.ts
-│   │   ├── emails
-│   │   │   ├── welcome_email_html.hbs
-│   │   │   └── welcome_email_text.hbs
-│   │   ├── index.js
-│   │   ├── load_helpers.ts
-│   │   ├── mailer.test.ts
-│   │   └── mailer.ts
-│   └── routes
-│       ├── (admin)
-│       │   └── account
-│       ├── (marketing)
-│       │   ├── +layout.svelte
-│       │   ├── +page.svelte
-│       │   ├── +page.ts
-│       │   ├── auth
-│       │   ├── blog
-│       │   ├── contact_us
-│       │   ├── login
-│       │   ├── pricing
-│       │   ├── search
-│       │   └── sitemap.xml
-│       ├── +error.svelte
-│       └── +layout.svelte
+│ ├── DatabaseDefinitions.ts
+│ ├── ambient.d.ts
+│ ├── app.css
+│ ├── app.d.ts
+│ ├── app.html
+│ ├── config.ts
+│ ├── hooks.server.ts
+│ ├── index.test.ts
+│ ├── lib
+│ │ ├── build_index.ts
+│ │ ├── emails
+│ │ │ ├── welcome_email_html.hbs
+│ │ │ └── welcome_email_text.hbs
+│ │ ├── index.js
+│ │ ├── load_helpers.ts
+│ │ ├── mailer.test.ts
+│ │ └── mailer.ts
+│ └── routes
+│ ├── (admin)
+│ │ └── account
+│ ├── (marketing)
+│ │ ├── +layout.svelte
+│ │ ├── +page.svelte
+│ │ ├── +page.ts
+│ │ ├── auth
+│ │ ├── blog
+│ │ ├── contact_us
+│ │ ├── login
+│ │ ├── pricing
+│ │ ├── search
+│ │ └── sitemap.xml
+│ ├── +error.svelte
+│ └── +layout.svelte
 ├── static
-│   ├── favicon.png
-│   ├── images
-│   │   ├── cm_logo.svg
-│   │   ├── example-home.png
-│   │   └── rss.svg
-│   └── robots.txt
+│ ├── favicon.png
+│ ├── images
+│ │ ├── cm_logo.svg
+│ │ ├── example-home.png
+│ │ └── rss.svg
+│ └── robots.txt
 ├── supabase
-│   └── migrations
-│       ├── 20240730010101_initial.sql
-│       └── 20240731051052_add_unsubscribed_to_profiles.sql
+│ └── migrations
+│ ├── 20240730010101_initial.sql
+│ └── 20240731051052_add_unsubscribed_to_profiles.sql
 ├── svelte.config.js
 ├── tailwind.config.js
 ├── tsconfig.json
@@ -432,8 +427,7 @@ Current Tree of the project from running ``tree -L 4 -I 'node_modules'``
 
 19 directories, 41 files
 
-
-Up Next. 
+Up Next.
 [] Video needs to be resized for mobile
 [] Add favicon
 [] improve site summary/preview pic that gets sent with link

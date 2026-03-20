@@ -3,7 +3,7 @@ import * as sitemap from "super-sitemap"
 import { WebsiteBaseUrl } from "../../../config"
 
 // Disable prerendering - serve via SSR on Cloudflare
-export const prerender = false;
+export const prerender = false
 
 export const GET: RequestHandler = async () => {
   return await sitemap.response({

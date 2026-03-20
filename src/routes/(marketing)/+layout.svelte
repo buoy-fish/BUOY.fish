@@ -30,25 +30,30 @@
         <div class="sm:hidden flex items-center gap-1 ml-auto mr-2">
           <a
             href="https://app.buoy.fish/demo"
-            class="hover:bg-secondary hover:text-white text-sm font-semibold px-3 py-2 rounded-md transition-colors duration-300 {isHome ? 'text-white drop-shadow-lg' : 'text-primary'}"
-            >Demo</a
+            class="hover:bg-secondary hover:text-white text-sm font-semibold px-3 py-2 rounded-md transition-colors duration-300 {isHome
+              ? 'text-white drop-shadow-lg'
+              : 'text-primary'}">Demo</a
           >
           <a
             href="https://app.buoy.fish"
-            class="hover:bg-secondary hover:text-white text-sm font-semibold px-3 py-2 rounded-md transition-colors duration-300 {isHome ? 'text-white drop-shadow-lg' : 'text-primary'}"
-            >App</a
+            class="hover:bg-secondary hover:text-white text-sm font-semibold px-3 py-2 rounded-md transition-colors duration-300 {isHome
+              ? 'text-white drop-shadow-lg'
+              : 'text-primary'}">App</a
           >
           <a
             href="/contact_us"
-            class="hover:bg-secondary hover:text-white text-sm font-semibold px-3 py-2 rounded-md transition-colors duration-300 {isHome ? 'text-white drop-shadow-lg' : 'text-primary'}"
-            >Contact</a
+            class="hover:bg-secondary hover:text-white text-sm font-semibold px-3 py-2 rounded-md transition-colors duration-300 {isHome
+              ? 'text-white drop-shadow-lg'
+              : 'text-primary'}">Contact</a
           >
         </div>
       </div>
 
       <!-- Centered tagline — homepage only, positioned below navbar -->
       {#if isHome}
-        <div class="fixed left-1/2 -translate-x-1/2 top-28 hidden md:block z-50">
+        <div
+          class="fixed left-1/2 -translate-x-1/2 top-28 hidden md:block z-50"
+        >
           <p
             class="text-white text-4xl font-semibold tracking-wide drop-shadow-lg"
           >
@@ -64,29 +69,33 @@
           <li>
             <a
               href="/blog"
-              class="hover:bg-secondary hover:text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl {isHome ? 'text-white drop-shadow-lg' : 'text-primary'}"
-              >Blog</a
+              class="hover:bg-secondary hover:text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl {isHome
+                ? 'text-white drop-shadow-lg'
+                : 'text-primary'}">Blog</a
             >
           </li>
           <li>
             <a
               href="/contact_us"
-              class="hover:bg-secondary hover:text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl {isHome ? 'text-white drop-shadow-lg' : 'text-primary'}"
-              >Contact Us</a
+              class="hover:bg-secondary hover:text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl {isHome
+                ? 'text-white drop-shadow-lg'
+                : 'text-primary'}">Contact Us</a
             >
           </li>
           <li>
             <a
               href="https://app.buoy.fish/demo"
-              class="hover:bg-secondary hover:text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl {isHome ? 'text-white drop-shadow-lg' : 'text-primary'}"
-              >Live Demo</a
+              class="hover:bg-secondary hover:text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl {isHome
+                ? 'text-white drop-shadow-lg'
+                : 'text-primary'}">Live Demo</a
             >
           </li>
           <li>
             <a
               href="https://app.buoy.fish"
-              class="hover:bg-secondary hover:text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl {isHome ? 'text-white drop-shadow-lg' : 'text-primary'}"
-              >App</a
+              class="hover:bg-secondary hover:text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl {isHome
+                ? 'text-white drop-shadow-lg'
+                : 'text-primary'}">App</a
             >
           </li>
         </ul>

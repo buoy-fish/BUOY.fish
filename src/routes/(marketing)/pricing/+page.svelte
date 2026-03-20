@@ -11,8 +11,11 @@
   <div class="max-w-2xl mx-auto text-center">
     <h1 class="text-3xl font-bold mb-4">Pricing</h1>
     <p class="text-lg text-base-content/70 mb-8">
-      We're finalizing our pricing plans. Contact us to discuss options for your fleet.
+      We're finalizing our pricing plans. Contact us to discuss options for your
+      fleet.
     </p>
-    <a href="/contact_us" class="btn btn-primary btn-lg">Contact Us for Pricing</a>
+    <a href="/contact_us" class="btn btn-primary btn-lg"
+      >Contact Us for Pricing</a
+    >
   </div>
 </div>

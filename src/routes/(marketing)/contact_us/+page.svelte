@@ -88,7 +88,9 @@
       </ul>
       <p>Once you complete the form, we'll be in touch!</p>
       <p class="text-sm pt-8">
-        Or email us directly at <a href="mailto:hello@buoy.fish" class="link">hello@buoy.fish</a>
+        Or email us directly at <a href="mailto:hello@buoy.fish" class="link"
+          >hello@buoy.fish</a
+        >
       </p>
     </div>
   </div>

@@ -5,8 +5,8 @@ import { Database } from "./DatabaseDefinitions"
 /// <reference types="@sveltejs/kit" />
 
 interface ImportMetaEnv {
-    // ... existing env vars ...
-    readonly PUBLIC_SITE_ACCESS: string;
+  // ... existing env vars ...
+  readonly PUBLIC_SITE_ACCESS: string
 }
 
 // See https://kit.svelte.dev/docs/types#app
@@ -39,7 +39,7 @@ declare global {
   // Add environment variable type
   namespace NodeJS {
     interface ProcessEnv {
-      PUBLIC_SITE_ACCESS: 'public' | 'protected'
+      PUBLIC_SITE_ACCESS: "public" | "protected"
     }
   }
 }

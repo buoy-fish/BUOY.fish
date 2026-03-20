@@ -8,7 +8,7 @@
 
 ## Objective
 
-Create a motion-designed overlay animation that visually connects the buoy visible in the hero video to a floating data HUD card, so the viewer understands that the live telemetry data is coming *from* that specific buoy. The animation must work across mobile, desktop, and fullscreen viewports.
+Create a motion-designed overlay animation that visually connects the buoy visible in the hero video to a floating data HUD card, so the viewer understands that the live telemetry data is coming _from_ that specific buoy. The animation must work across mobile, desktop, and fullscreen viewports.
 
 ## Background
 
@@ -38,20 +38,20 @@ The contractor delivers **overlay assets and animation files**. The BUOY.fish de
 
 ### Required deliverables
 
-| # | Deliverable | Format | Notes |
-|---|------------|--------|-------|
-| 1 | **Connector animation** — the line/arc/trail from buoy to HUD card | Lottie JSON (preferred) or SVG sprite sheet | Must have transparent background. Lottie preferred for smallest file size and programmatic control (playback speed, direction, color). |
-| 2 | **HUD card entrance animation** — replaces the current simple fade-in | Lottie JSON or CSS animation spec | The card should feel like it "materializes" or "boots up" in sync with the connector reaching it. |
-| 3 | **Design mockups** — showing the overlay at 3 viewport sizes | PNG/Figma | Mobile (~375px), Desktop (~1440px), Ultrawide (~2560px). These are reference only — exact positioning will be handled in code. |
-| 4 | **Animation timing spec** | Document or annotated video | Describing durations, easing curves, and sequencing (e.g., "connector draws over 800ms ease-out, then card materializes over 400ms"). |
+| #   | Deliverable                                                           | Format                                      | Notes                                                                                                                                  |
+| --- | --------------------------------------------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Connector animation** — the line/arc/trail from buoy to HUD card    | Lottie JSON (preferred) or SVG sprite sheet | Must have transparent background. Lottie preferred for smallest file size and programmatic control (playback speed, direction, color). |
+| 2   | **HUD card entrance animation** — replaces the current simple fade-in | Lottie JSON or CSS animation spec           | The card should feel like it "materializes" or "boots up" in sync with the connector reaching it.                                      |
+| 3   | **Design mockups** — showing the overlay at 3 viewport sizes          | PNG/Figma                                   | Mobile (~375px), Desktop (~1440px), Ultrawide (~2560px). These are reference only — exact positioning will be handled in code.         |
+| 4   | **Animation timing spec**                                             | Document or annotated video                 | Describing durations, easing curves, and sequencing (e.g., "connector draws over 800ms ease-out, then card materializes over 400ms").  |
 
 ### Nice-to-have deliverables
 
-| # | Deliverable | Format | Notes |
-|---|------------|--------|-------|
-| 5 | **Idle/loop animation** for the connector | Lottie JSON | Subtle pulse, particle flow, or dash march that plays while the HUD is visible (between 5.5s–20s). |
-| 6 | **Disconnect/fade-out animation** | Lottie JSON | Reverse of entrance — connector retracts and card dissolves when the HUD exits at 20s. |
-| 7 | **Mobile-specific variant** | Lottie JSON | If the mobile layout requires a fundamentally different animation (e.g., vertical line up to the top bar vs. diagonal arc to a side card). |
+| #   | Deliverable                               | Format      | Notes                                                                                                                                      |
+| --- | ----------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| 5   | **Idle/loop animation** for the connector | Lottie JSON | Subtle pulse, particle flow, or dash march that plays while the HUD is visible (between 5.5s–20s).                                         |
+| 6   | **Disconnect/fade-out animation**         | Lottie JSON | Reverse of entrance — connector retracts and card dissolves when the HUD exits at 20s.                                                     |
+| 7   | **Mobile-specific variant**               | Lottie JSON | If the mobile layout requires a fundamentally different animation (e.g., vertical line up to the top bar vs. diagonal arc to a side card). |
 
 ## Technical Context for Contractor
 
@@ -60,7 +60,7 @@ The contractor delivers **overlay assets and animation files**. The BUOY.fish de
 - **Content:** Ocean surface footage with BUOY.fish GPS buoys visible. The buoy of interest is roughly center-frame.
 - **Formats:** WebM (VP9, 16MB) and MP4 (H.264, 7.5MB), both optimized for streaming.
 - **Behavior:** Autoplays muted, loops continuously. Uses `object-cover` CSS, meaning the visible portion of the video changes with viewport aspect ratio.
-- **Important:** The video is a *background element*. Overlays are HTML/SVG/Canvas elements positioned absolutely on top of it, not composited into the video file.
+- **Important:** The video is a _background element_. Overlays are HTML/SVG/Canvas elements positioned absolutely on top of it, not composited into the video file.
 
 ### The HUD card
 
@@ -78,6 +78,7 @@ The connector animation must bridge two points that both move as the viewport ch
 2. **Target point (HUD card):** Moves between two completely different positions and layouts depending on screen width (desktop floating card vs. mobile top bar).
 
 **What this means for the animation design:**
+
 - The connector should be designed as a **flexible path** — not a fixed-shape animation baked to specific pixel coordinates.
 - Ideal approach: a Lottie animation where the path endpoints can be programmatically updated, OR a set of SVG path segments that the dev team can dynamically compose.
 - Alternatively: design 2-3 variants (mobile, desktop, ultrawide) and the dev team will swap between them at breakpoints.
@@ -104,6 +105,7 @@ The ideal contractor has:
 ## Design Direction & Inspiration
 
 The visual language should feel like:
+
 - A **sonar ping** or **radar sweep** connecting to a target
 - A **data uplink** — the buoy is transmitting and the HUD is receiving
 - Subtle sci-fi/tactical aesthetic that matches the existing HUD card's dark glassmorphism style
@@ -128,12 +130,12 @@ The connector animation should likely use the HUD green or a cyan/teal (#22d3ee)
 
 ## Timeline & Budget
 
-| Phase | Duration | Description |
-|-------|----------|-------------|
-| **Concept** | 3-5 days | Contractor reviews video + current HUD, proposes 2-3 animation concepts (static mockups or rough video sketches) |
-| **Review** | 1-2 days | BUOY.fish team selects direction, provides feedback |
-| **Production** | 5-7 days | Contractor produces final Lottie/SVG assets + timing spec |
-| **Revision** | 3-5 days | One round of revisions after dev team integration testing |
+| Phase          | Duration | Description                                                                                                      |
+| -------------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
+| **Concept**    | 3-5 days | Contractor reviews video + current HUD, proposes 2-3 animation concepts (static mockups or rough video sketches) |
+| **Review**     | 1-2 days | BUOY.fish team selects direction, provides feedback                                                              |
+| **Production** | 5-7 days | Contractor produces final Lottie/SVG assets + timing spec                                                        |
+| **Revision**   | 3-5 days | One round of revisions after dev team integration testing                                                        |
 
 **Estimated total:** 2-3 weeks
 
@@ -141,7 +143,7 @@ Budget: [TBD — discuss with contractor. Expect $1,500–$4,000 depending on co
 
 ## Success Criteria
 
-1. A viewer watching the hero video intuitively understands that the data card is showing information *from the buoy in the water*
+1. A viewer watching the hero video intuitively understands that the data card is showing information _from the buoy in the water_
 2. The animation feels premium and polished, not like an afterthought
 3. Works visually at mobile (375px), tablet (768px), desktop (1440px), and ultrawide (2560px) — even if this requires multiple animation variants
 4. Total added asset size (all Lottie JSONs) is under 150KB

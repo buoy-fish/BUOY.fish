@@ -22,15 +22,15 @@ const blogPosts: BlogPost[] = [
     date: "2026-03-18",
   },
   {
-    title: "Costa Rica — Bringing Connected Gear Tracking to the Gulf of Nicoya",
+    title:
+      "Costa Rica — Bringing Connected Gear Tracking to the Gulf of Nicoya",
     description:
       "BUOY.fish plans its first Central American deployment, targeting 90% LoRaWAN coverage of the Gulf of Nicoya for artisanal fisheries.",
     link: "/blog/costa-rica-gulf-of-nicoya",
     date: "2026-02-20",
   },
   {
-    title:
-      "Punta Eugenia & Isla Natividad — Expanding in Baja California",
+    title: "Punta Eugenia & Isla Natividad — Expanding in Baja California",
     description:
       "Our next deployment brings upgraded smart buoys to two more Baja fishing cooperatives, building on 160,000+ payloads from Punta Abreojos.",
     link: "/blog/punta-eugenia-isla-natividad",
@@ -44,8 +44,7 @@ const blogPosts: BlogPost[] = [
     date: "2025-09-10",
   },
   {
-    title:
-      "First At-Scale Trial — 80 Smart Buoys in Punta Abreojos, Mexico",
+    title: "First At-Scale Trial — 80 Smart Buoys in Punta Abreojos, Mexico",
     description:
       "Together with GGGI, Pro Natura, and Fedecoop, we deployed 80 connected buoys — recording 160,000+ payloads and proving the technology at commercial scale.",
     link: "/blog/punta-abreojos-deployment",

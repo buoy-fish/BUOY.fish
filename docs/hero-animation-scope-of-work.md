@@ -18,12 +18,13 @@ We're looking for a motion/web designer to elevate this hero section into a poli
 
 Design and implement (or spec for implementation) an animated overlay experience that:
 
-1. **Visually connects the buoy in the video to its data readout** — e.g., animated dashed lines, signal pulses, or a visual "connection" that makes it clear the data is *coming from* the buoy
+1. **Visually connects the buoy in the video to its data readout** — e.g., animated dashed lines, signal pulses, or a visual "connection" that makes it clear the data is _coming from_ the buoy
 2. **Incorporates a map visualization** — could be a small inset map showing the buoy's location (Punta Abreojos, Mexico), similar to our production app's map view. Could be a screenshot of our app with design augmentations, or a custom illustration
 3. **Feels polished and intentional** — smooth timing, appropriate easing, clear visual hierarchy
 4. **Works responsively** — desktop gets the full experience; mobile gets a compact version (currently a top bar) that doesn't obstruct the video
 
 ### Optional Enhancements
+
 - Animated signal waves emanating from the buoy
 - A subtle "scanning" or "connecting" animation before the data card appears
 - Map zoom-in animation showing where in the world this buoy is
@@ -32,15 +33,18 @@ Design and implement (or spec for implementation) an animated overlay experience
 ## Technical Context
 
 ### Stack
+
 - **Framework**: SvelteKit 5 + TypeScript
 - **Styling**: Tailwind CSS + DaisyUI
 - **Hosting**: Cloudflare Pages
 - **Repo**: GitHub (we can grant contributor access)
 
 ### How the overlay works
+
 The overlay is a Svelte component (`src/routes/(marketing)/+page.svelte`) that listens to the video's `timeupdate` event. At specific timestamps, it shows/hides elements with CSS transitions. The buoy data is simulated in JS with gentle random drift to look "live."
 
 ### File locations
+
 ```
 src/routes/(marketing)/+page.svelte    # Hero section + overlay logic
 src/routes/(marketing)/+layout.svelte  # Navbar + footer
@@ -51,12 +55,14 @@ static/images/                         # Logos, poster image
 ## Delivery Options (pick one)
 
 ### Option A: Work directly in the codebase (preferred)
+
 - We grant you access to the GitHub repo
 - You create a feature branch and implement the animations in the Svelte component
 - Use CSS animations, SVG, Lottie, or GSAP — whatever produces the best result
 - We review via PR
 
 ### Option B: Design spec + assets
+
 - Deliver a Figma file with:
   - Exact positions/sizes of all overlay elements (as % of viewport)
   - Animation timeline with easing curves and durations
@@ -64,6 +70,7 @@ static/images/                         # Logos, poster image
 - We implement from the spec
 
 ### Option C: Composite video (simplest but least flexible)
+
 - Deliver a new hero video (MP4 + WebM) with all overlays baked in via After Effects/Motion
 - Pros: pixel-perfect
 - Cons: can't be interactive, harder to iterate, larger file size
@@ -91,6 +98,7 @@ cd BUOY.fish/static/videos/
 ```
 
 Or download directly from the deployed site:
+
 - https://buoy-staging.pages.dev/videos/hero-video-optimized.mp4
 
 For the raw/higher-res version, contact Jameson.

@@ -10,7 +10,7 @@ import { createClient } from "@supabase/supabase-js"
 import type { Handle } from "@sveltejs/kit"
 import { sequence } from "@sveltejs/kit/hooks"
 
-const SITE_PASSWORD = 'BUOY'; // Replace with your desired password
+const SITE_PASSWORD = "BUOY" // Replace with your desired password
 
 export const supabase: Handle = async ({ event, resolve }) => {
   event.locals.supabase = createServerClient(
@@ -99,45 +99,47 @@ const authGuard: Handle = async ({ event, resolve }) => {
 
 // Simplified password protection
 const passwordProtect: Handle = async ({ event, resolve }) => {
-    // If site is public, skip password protection
-    if (PUBLIC_SITE_ACCESS === 'public') {
-        return resolve(event);
-    }
+  // If site is public, skip password protection
+  if (PUBLIC_SITE_ACCESS === "public") {
+    return resolve(event)
+  }
 
-    // Skip auth for static assets
-    if (event.url.pathname.startsWith('/videos') ||
-        event.url.pathname.startsWith('/images') ||
-        event.url.pathname.startsWith('/_app')) {
-        return resolve(event);
-    }
+  // Skip auth for static assets
+  if (
+    event.url.pathname.startsWith("/videos") ||
+    event.url.pathname.startsWith("/images") ||
+    event.url.pathname.startsWith("/_app")
+  ) {
+    return resolve(event)
+  }
 
-    // If already authorized with cookie, proceed
-    const authorized = event.cookies.get('authorized');
-    if (authorized === 'true') {
-        return resolve(event);
-    }
+  // If already authorized with cookie, proceed
+  const authorized = event.cookies.get("authorized")
+  if (authorized === "true") {
+    return resolve(event)
+  }
 
-    // Check if password was submitted
-    const password = event.url.searchParams.get('password');
+  // Check if password was submitted
+  const password = event.url.searchParams.get("password")
 
-    if (password === SITE_PASSWORD) {
-        // Set cookie via SvelteKit's cookies API so it persists across requests
-        event.cookies.set('authorized', 'true', {
-            path: '/',
-            httpOnly: true,
-            sameSite: 'lax',
-            maxAge: 60 * 60 * 24, // 24 hours
-        });
-        // Redirect to the same page without the password in the URL
-        return new Response(null, {
-            status: 302,
-            headers: { location: event.url.pathname },
-        });
-    }
+  if (password === SITE_PASSWORD) {
+    // Set cookie via SvelteKit's cookies API so it persists across requests
+    event.cookies.set("authorized", "true", {
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24, // 24 hours
+    })
+    // Redirect to the same page without the password in the URL
+    return new Response(null, {
+      status: 302,
+      headers: { location: event.url.pathname },
+    })
+  }
 
-    // Show password page if not authorized
-    return new Response(
-        `<!DOCTYPE html>
+  // Show password page if not authorized
+  return new Response(
+    `<!DOCTYPE html>
         <html>
             <head>
                 <title>Buoy Staging - Password Required</title>
@@ -206,12 +208,12 @@ const passwordProtect: Handle = async ({ event, resolve }) => {
                 </div>
             </body>
         </html>`,
-        {
-            headers: {
-                'content-type': 'text/html',
-            },
-        }
-    );
+    {
+      headers: {
+        "content-type": "text/html",
+      },
+    },
+  )
 }
 
-export const handle: Handle = sequence(passwordProtect, supabase, authGuard);
+export const handle: Handle = sequence(passwordProtect, supabase, authGuard)
