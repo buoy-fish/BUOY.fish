@@ -2,12 +2,15 @@
   import { page } from "$app/stores"
   import { WebsiteName } from "./../../config"
   import "../../app.css"
+  import type { Snippet } from "svelte"
+
+  let { children }: { children: Snippet } = $props()
 
   let isHome = $derived($page.url.pathname === "/")
 </script>
 
 <div class="relative">
-  <slot />
+  {@render children()}
 
   <!-- Navbar overlaid on top -->
   <div class="absolute top-8 left-0 right-0 z-50">
