@@ -24,7 +24,7 @@
       />
     </a>
   </div>
-  <div class="text-lg text-center">A demo blog with sample content.</div>
+  <div class="text-lg text-center">Stories from the field.</div>
 
   {#each sortedBlogPosts as post}
     <a href={post.link}>
