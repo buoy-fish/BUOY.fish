@@ -25,16 +25,30 @@
         </a>
         <!-- Mobile nav links — right-justified -->
         <div class="sm:hidden flex items-center gap-1 ml-auto mr-2">
-          <a href="https://app.buoy.fish/demo" class="hover:bg-secondary hover:text-white text-white text-sm font-semibold drop-shadow-lg px-3 py-2 rounded-md transition-colors duration-300">Demo</a>
-          <a href="https://app.buoy.fish" class="hover:bg-secondary hover:text-white text-white text-sm font-semibold drop-shadow-lg px-3 py-2 rounded-md transition-colors duration-300">App</a>
-          <a href="/contact_us" class="hover:bg-secondary hover:text-white text-white text-sm font-semibold drop-shadow-lg px-3 py-2 rounded-md transition-colors duration-300">Contact</a>
+          <a
+            href="https://app.buoy.fish/demo"
+            class="hover:bg-secondary hover:text-white text-white text-sm font-semibold drop-shadow-lg px-3 py-2 rounded-md transition-colors duration-300"
+            >Demo</a
+          >
+          <a
+            href="https://app.buoy.fish"
+            class="hover:bg-secondary hover:text-white text-white text-sm font-semibold drop-shadow-lg px-3 py-2 rounded-md transition-colors duration-300"
+            >App</a
+          >
+          <a
+            href="/contact_us"
+            class="hover:bg-secondary hover:text-white text-white text-sm font-semibold drop-shadow-lg px-3 py-2 rounded-md transition-colors duration-300"
+            >Contact</a
+          >
         </div>
       </div>
 
       <!-- Centered tagline -->
       <div class="absolute left-1/2 -translate-x-1/2 hidden md:block">
-        <p class="text-white text-lg font-semibold tracking-wide drop-shadow-lg">
-          Let's solve lost and abandoned fishing gear.
+        <p
+          class="text-white text-lg font-semibold tracking-wide drop-shadow-lg"
+        >
+          Solving lost and abandoned fishing gear.
         </p>
       </div>
 
@@ -73,7 +87,6 @@
         </ul>
       </div>
     </div>
-
   </div>
 
   <!-- Footer -->
@@ -90,9 +103,13 @@
       </nav>
       <aside>
         <span class="footer-title opacity-80">Connect</span>
-        <a class="link link-hover my-1" href="https://app.buoy.fish/demo">Live Demo</a>
+        <a class="link link-hover my-1" href="https://app.buoy.fish/demo"
+          >Live Demo</a
+        >
         <a class="link link-hover my-1" href="https://app.buoy.fish">App</a>
-        <a class="link link-hover my-1" href="mailto:hello@buoy.fish">hello@buoy.fish</a>
+        <a class="link link-hover my-1" href="mailto:hello@buoy.fish"
+          >hello@buoy.fish</a
+        >
       </aside>
     </footer>
   </div>
