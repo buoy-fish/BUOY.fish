@@ -3,7 +3,7 @@
   import { WebsiteName } from "./../../config"
   import "../../app.css"
 
-  $: isHome = $page.url.pathname === "/"
+  let isHome = $derived($page.url.pathname === "/")
 </script>
 
 <div class="relative">
@@ -48,19 +48,6 @@
           >
         </div>
       </div>
-
-      <!-- Centered tagline — homepage only, positioned below navbar -->
-      {#if isHome}
-        <div
-          class="fixed left-1/2 -translate-x-1/2 top-28 hidden md:block z-50"
-        >
-          <p
-            class="text-white text-4xl font-semibold tracking-wide drop-shadow-lg"
-          >
-            Solving lost and abandoned fishing gear.
-          </p>
-        </div>
-      {/if}
 
       <div class="flex-none mr-4">
         <ul

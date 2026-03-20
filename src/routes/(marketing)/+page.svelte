@@ -8,6 +8,65 @@
   import { onMount, onDestroy } from "svelte"
 
   let videoElement: HTMLVideoElement
+  let trackEl: HTMLDivElement
+
+  const partners = [
+    {
+      name: "GGGI",
+      logo: "/images/partners/gggi.png",
+      alt: "Global Ghost Gear Initiative",
+      description:
+        "Official GGGI member, committed to preventing ghost gear worldwide.",
+      invert: false,
+      darkBg: false,
+    },
+    {
+      name: "Fedecoop",
+      logo: "/images/partners/fedecoop.png",
+      alt: "Fedecoop",
+      description:
+        "Deploying 130+ smart buoys in Baja California's spiny lobster fishery.",
+      invert: true,
+      darkBg: true,
+    },
+    {
+      name: "CDFW",
+      logo: "/images/partners/cdfw.png",
+      alt: "California Department of Fish and Wildlife",
+      description:
+        "Collaborating on gear tracking and recovery in California waters.",
+      invert: false,
+      darkBg: false,
+    },
+    {
+      name: "GoDeep",
+      logo: "/images/partners/godeep.png",
+      alt: "GoDeep International",
+      description:
+        "Buoy manufacturing partner for ruggedized commercial hardware.",
+      invert: false,
+      darkBg: false,
+    },
+    {
+      name: "IRNAS",
+      logo: "/images/partners/irnas.png",
+      alt: "IRNAS",
+      description: "Technology partner for BUOY's GPS/LoRaWAN hardware.",
+      invert: true,
+      darkBg: true,
+    },
+    {
+      name: "SMTP",
+      logo: "/images/partners/smtpv2.png",
+      alt: "Schmidt Marine Technology Partners",
+      description:
+        "Funding partner through GGGI, with mentorship and a global ocean network.",
+      invert: false,
+      darkBg: false,
+    },
+  ]
+  let scrollY = 0
+  let taglineOpacity = $derived(Math.max(0, 1 - scrollY / 400))
 
   // Typewriter effect — commented out, kept for future use
   // let showTypewriter = false
@@ -165,6 +224,22 @@
   <!-- eslint-disable-next-line svelte/no-at-html-tags -->
   {@html jsonldScript}
 </svelte:head>
+
+<svelte:window bind:scrollY />
+
+<!-- Tagline — fades out as user scrolls -->
+{#if taglineOpacity > 0}
+  <div
+    class="fixed left-1/2 -translate-x-1/2 top-28 hidden md:block z-50 pointer-events-none"
+    style="opacity: {taglineOpacity}"
+  >
+    <p
+      class="text-white text-4xl font-semibold tracking-wide drop-shadow-lg whitespace-nowrap"
+    >
+      Solving lost and abandoned fishing gear.
+    </p>
+  </div>
+{/if}
 
 <!-- Hero Video Section -->
 <div class="relative h-screen w-full overflow-hidden">
@@ -540,88 +615,79 @@
 </section>
 
 <!-- Partners -->
-<section class="py-20 px-6 bg-base-200">
-  <div class="max-w-5xl mx-auto">
+<section class="py-20 bg-base-200">
+  <div class="mx-auto">
     <h2 class="text-3xl md:text-4xl font-bold text-center mb-4 text-primary">
       Partners
     </h2>
-    <p class="text-center text-base-content/60 mb-16 max-w-2xl mx-auto">
-      Working with leading organizations to prevent ghost gear and protect ocean
-      ecosystems.
+    <p class="text-center text-base-content/60 mb-16 max-w-2xl mx-auto px-6">
+      Working with leading organizations to improve the lives of fishermen and
+      protect the health of our oceans.
     </p>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 items-center">
-      <!-- GGGI -->
+    <div class="relative">
+      <!-- Scroll track -->
       <div
-        class="group relative flex items-center justify-center p-6 rounded-xl bg-base-100 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-default"
+        bind:this={trackEl}
+        class="partner-track flex gap-6 overflow-x-auto px-8 py-4"
       >
-        <img
-          src="/images/partners/gggi.png"
-          alt="Global Ghost Gear Initiative"
-          class="h-16 md:h-20 object-contain grayscale group-hover:grayscale-0 transition-all duration-300"
-        />
-        <div
-          class="absolute inset-0 flex items-center justify-center bg-primary/95 text-primary-content rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4"
-        >
-          <p class="text-sm text-center font-medium">
-            Official member of the Global Ghost Gear Initiative, committed to
-            preventing ghost gear worldwide.
-          </p>
-        </div>
+        {#each partners as p}
+          <div
+            class="group relative flex-shrink-0 w-52 h-36 flex items-center justify-center p-6 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-default {p.darkBg
+              ? 'bg-base-100 group-hover:bg-[#1a3a5c]'
+              : 'bg-base-100'}"
+          >
+            <img
+              src={p.logo}
+              alt={p.alt}
+              class="h-16 md:h-20 object-contain transition-all duration-300 {p.invert
+                ? 'invert grayscale group-hover:invert-0 group-hover:grayscale-0'
+                : 'grayscale group-hover:grayscale-0'}"
+            />
+            <div
+              class="absolute inset-0 flex items-center justify-center bg-primary/95 text-primary-content rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4"
+            >
+              <p class="text-sm text-center font-medium">{p.description}</p>
+            </div>
+          </div>
+        {/each}
       </div>
-      <!-- Fedecoop (white logo — invert to dark, remove invert on hover) -->
-      <div
-        class="group relative flex items-center justify-center p-6 rounded-xl bg-base-100 group-hover:bg-[#1a3a5c] shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-default"
+      <!-- Left/right scroll buttons -->
+      <button
+        class="absolute left-1 top-1/2 -translate-y-1/2 z-10 btn btn-circle btn-sm bg-base-100/90 border-none shadow-md hover:bg-base-100"
+        onclick={() => trackEl.scrollBy({ left: -260, behavior: "smooth" })}
+        aria-label="Scroll partners left"
       >
-        <img
-          src="/images/partners/fedecoop.png"
-          alt="Fedecoop"
-          class="h-16 md:h-20 object-contain invert grayscale group-hover:invert-0 group-hover:grayscale-0 transition-all duration-300"
-        />
-        <div
-          class="absolute inset-0 flex items-center justify-center bg-primary/95 text-primary-content rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4"
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          ><path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          /></svg
         >
-          <p class="text-sm text-center font-medium">
-            Deploying 130+ smart buoys across Baja California's spiny lobster
-            fishery with Mexico's largest fishing cooperative.
-          </p>
-        </div>
-      </div>
-      <!-- CDFW -->
-      <div
-        class="group relative flex items-center justify-center p-6 rounded-xl bg-base-100 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-default"
+      </button>
+      <button
+        class="absolute right-1 top-1/2 -translate-y-1/2 z-10 btn btn-circle btn-sm bg-base-100/90 border-none shadow-md hover:bg-base-100"
+        onclick={() => trackEl.scrollBy({ left: 260, behavior: "smooth" })}
+        aria-label="Scroll partners right"
       >
-        <img
-          src="/images/partners/cdfw.png"
-          alt="California Department of Fish and Wildlife"
-          class="h-16 md:h-20 object-contain grayscale group-hover:grayscale-0 transition-all duration-300"
-        />
-        <div
-          class="absolute inset-0 flex items-center justify-center bg-primary/95 text-primary-content rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4"
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          ><path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 5l7 7-7 7"
+          /></svg
         >
-          <p class="text-sm text-center font-medium">
-            Collaborating with California DFW on gear tracking and recovery
-            efforts in California waters.
-          </p>
-        </div>
-      </div>
-      <!-- GoDeep -->
-      <div
-        class="group relative flex items-center justify-center p-6 rounded-xl bg-base-100 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-default"
-      >
-        <img
-          src="/images/partners/godeep.png"
-          alt="GoDeep International"
-          class="h-16 md:h-20 object-contain grayscale group-hover:grayscale-0 transition-all duration-300"
-        />
-        <div
-          class="absolute inset-0 flex items-center justify-center bg-primary/95 text-primary-content rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4"
-        >
-          <p class="text-sm text-center font-medium">
-            Our buoy manufacturing partner, building ruggedized hardware for
-            commercial fishing conditions.
-          </p>
-        </div>
-      </div>
+      </button>
     </div>
   </div>
 </section>
@@ -667,6 +733,22 @@
 </section>
 
 <style>
+  .partner-track {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    scroll-snap-type: x mandatory;
+    justify-content: center;
+  }
+  .partner-track::-webkit-scrollbar {
+    display: none;
+  }
+  /* When content overflows, left-align so scroll works naturally */
+  @media (max-width: 1400px) {
+    .partner-track {
+      justify-content: flex-start;
+    }
+  }
+
   .hud-panel {
     background: rgba(10, 20, 40, 0.75);
     backdrop-filter: blur(12px);
