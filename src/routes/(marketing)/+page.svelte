@@ -66,7 +66,11 @@
     },
   ]
   let scrollY = $state(0)
-  let taglineOpacity = $derived(Math.max(0, 1 - scrollY / 400))
+  let taglineEl: HTMLParagraphElement
+  let taglineLeft = $state(0)
+  let taglineBaseOpacity = $derived(Math.max(0, 1 - scrollY / 400))
+  let taglineHidden = $state(false) // stays true from HUD appearance until video loops
+  let taglineOpacity = $derived(taglineHidden ? 0 : taglineBaseOpacity)
 
   // Typewriter effect — commented out, kept for future use
   // let showTypewriter = false
@@ -87,7 +91,7 @@
   let hudLastPing = $state("just now")
 
   // Animation timing thresholds (seconds, synced to video currentTime)
-  const HUD_IN = 5.5 // delayed to let user take in the video first
+  const HUD_IN = 12 // delayed to let user take in the video first
   const ALL_OUT = 20
 
   // Track state to avoid re-triggering on every timeupdate
@@ -167,6 +171,7 @@
         showHud = false
         hudActive = false
       }
+      taglineHidden = false
       return
     }
 
@@ -185,6 +190,7 @@
       lastDataUpdate = t
       showHud = true
       hudActive = true
+      taglineHidden = true
     }
 
     if (hudActive) {
@@ -192,16 +198,25 @@
     }
   }
 
+  function updateTaglineLeft() {
+    if (taglineEl) {
+      taglineLeft = taglineEl.getBoundingClientRect().left
+    }
+  }
+
   onMount(() => {
     if (videoElement) {
       videoElement.addEventListener("timeupdate", handleTimeUpdate)
     }
+    updateTaglineLeft()
+    window.addEventListener("resize", updateTaglineLeft)
   })
 
   onDestroy(() => {
     if (videoElement) {
       videoElement.removeEventListener("timeupdate", handleTimeUpdate)
     }
+    window.removeEventListener("resize", updateTaglineLeft)
   })
 </script>
 
@@ -223,23 +238,27 @@
   <meta name="twitter:image" content="{WebsiteBaseUrl}/images/og-image.jpg" />
   <!-- eslint-disable-next-line svelte/no-at-html-tags -->
   {@html jsonldScript}
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap"
+    rel="stylesheet"
+  />
 </svelte:head>
 
 <svelte:window bind:scrollY />
 
-<!-- Tagline — fades out as user scrolls -->
-{#if taglineOpacity > 0}
-  <div
-    class="fixed left-1/2 -translate-x-1/2 top-28 hidden md:block z-50 pointer-events-none"
-    style="opacity: {taglineOpacity}"
+<!-- Tagline — fades out as user scrolls or when HUD appears -->
+<div
+  class="fixed left-1/2 -translate-x-1/2 top-28 hidden md:block z-50 pointer-events-none"
+  style="opacity: {taglineOpacity}; transition: opacity 920ms ease"
+>
+  <p
+    bind:this={taglineEl}
+    class="text-white font-semibold tracking-wide drop-shadow-lg whitespace-nowrap"
+    style="font-family: 'Poppins', sans-serif; font-size: 2.59rem"
   >
-    <p
-      class="text-white text-4xl font-semibold tracking-wide drop-shadow-lg whitespace-nowrap"
-    >
-      Solving lost and abandoned fishing gear.
-    </p>
-  </div>
-{/if}
+    Solving lost and abandoned fishing gear.
+  </p>
+</div>
 
 <!-- Hero Video Section -->
 <div class="relative h-screen w-full overflow-hidden">
@@ -266,8 +285,9 @@
   {#if showHud}
     <!-- Desktop HUD card -->
     <div
-      class="hidden md:block absolute top-[20%] left-[12%] z-20 w-[320px]"
-      transition:fade={{ duration: 800 }}
+      class="hidden md:block absolute top-[20%] z-20 w-[320px]"
+      style="left: {taglineLeft}px"
+      transition:fade={{ duration: 920 }}
     >
       <div class="hud-panel rounded-xl p-4 font-mono text-sm">
         <!-- Header -->
@@ -356,7 +376,7 @@
     <!-- Mobile HUD bar — compact strip below logo + nav links -->
     <div
       class="md:hidden absolute top-[120px] left-0 right-0 z-20 px-2"
-      transition:fade={{ duration: 800 }}
+      transition:fade={{ duration: 920 }}
     >
       <div class="hud-panel rounded-lg px-3 py-2 font-mono text-xs">
         <!-- Top row: name + live indicator -->
