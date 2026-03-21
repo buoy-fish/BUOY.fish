@@ -71,6 +71,7 @@
   let taglineBaseOpacity = $derived(Math.max(0, 1 - scrollY / 400))
   let taglineHidden = $state(false) // stays true from HUD appearance until video loops
   let taglineOpacity = $derived(taglineHidden ? 0 : taglineBaseOpacity)
+  let showSecondTagline = $state(false) // "One buoy at a time."
 
   // Typewriter effect — commented out, kept for future use
   // let showTypewriter = false
@@ -91,7 +92,8 @@
   let hudLastPing = $state("just now")
 
   // Animation timing thresholds (seconds, synced to video currentTime)
-  const HUD_IN = 12 // delayed to let user take in the video first
+  const TAGLINE_SWAP = 7 // swap to "One buoy at a time."
+  const HUD_IN = 12 // HUD appears, second tagline fades out
   const ALL_OUT = 20
 
   // Track state to avoid re-triggering on every timeupdate
@@ -166,13 +168,20 @@
     const t = videoElement.currentTime
 
     // Reset everything when video loops (currentTime jumps back)
-    if (t < HUD_IN) {
+    if (t < TAGLINE_SWAP) {
       if (hudActive) {
         showHud = false
         hudActive = false
       }
       taglineHidden = false
+      showSecondTagline = false
       return
+    }
+
+    // Swap tagline: fade out "Solving..." and fade in "One buoy at a time."
+    if (t >= TAGLINE_SWAP && t < HUD_IN && !showSecondTagline) {
+      taglineHidden = true
+      showSecondTagline = true
     }
 
     // Fade out zone
@@ -182,7 +191,7 @@
       return
     }
 
-    // HUD card appears
+    // HUD card appears, second tagline fades out
     if (t >= HUD_IN && !hudActive) {
       resetHudValues()
       pingStart = t
@@ -190,7 +199,7 @@
       lastDataUpdate = t
       showHud = true
       hudActive = true
-      taglineHidden = true
+      showSecondTagline = false
     }
 
     if (hudActive) {
@@ -248,10 +257,10 @@
 
 <svelte:window bind:scrollY />
 
-<!-- Tagline — fades out as user scrolls or when HUD appears -->
+<!-- Tagline 1 — "Solving lost and abandoned fishing gear." -->
 <div
   class="fixed left-1/2 -translate-x-1/2 top-28 hidden md:block z-50 pointer-events-none"
-  style="opacity: {taglineOpacity}; transition: opacity 920ms ease"
+  style="opacity: {taglineOpacity}; transition: opacity 1400ms ease"
 >
   <p
     bind:this={taglineEl}
@@ -259,6 +268,19 @@
     style="font-family: 'Poppins', sans-serif; font-size: 2.59rem"
   >
     Solving lost and abandoned fishing gear.
+  </p>
+</div>
+
+<!-- Tagline 2 — "One buoy at a time." -->
+<div
+  class="fixed left-1/2 -translate-x-1/2 top-[10.5rem] hidden md:block z-50 pointer-events-none"
+  style="opacity: {showSecondTagline ? taglineBaseOpacity : 0}; transition: opacity 1400ms ease 250ms"
+>
+  <p
+    class="text-white font-semibold tracking-wide drop-shadow-lg whitespace-nowrap"
+    style="font-family: 'Poppins', sans-serif; font-size: 2.59rem"
+  >
+    One buoy at a time.
   </p>
 </div>
 
@@ -289,7 +311,7 @@
     <div
       class="hidden md:block absolute top-[20%] z-20 w-[320px]"
       style="left: {taglineLeft}px"
-      transition:fade={{ duration: 920 }}
+      transition:fade={{ duration: 920, delay: 250 }}
     >
       <div class="hud-panel rounded-xl p-4 font-mono text-sm">
         <!-- Header -->
@@ -378,7 +400,7 @@
     <!-- Mobile HUD bar — compact strip below logo + nav links -->
     <div
       class="md:hidden absolute top-[120px] left-0 right-0 z-20 px-2"
-      transition:fade={{ duration: 920 }}
+      transition:fade={{ duration: 920, delay: 250 }}
     >
       <div class="hud-panel rounded-lg px-3 py-2 font-mono text-xs">
         <!-- Top row: name + live indicator -->
