@@ -274,7 +274,9 @@
 <!-- Tagline 2 — "One buoy at a time." -->
 <div
   class="fixed left-1/2 -translate-x-1/2 top-[10.5rem] hidden md:block z-50 pointer-events-none"
-  style="opacity: {showSecondTagline ? taglineBaseOpacity : 0}; transition: opacity 1400ms ease 250ms"
+  style="opacity: {showSecondTagline
+    ? taglineBaseOpacity
+    : 0}; transition: opacity 1400ms ease 250ms"
 >
   <p
     class="text-white font-semibold tracking-wide drop-shadow-lg whitespace-nowrap"
