@@ -216,7 +216,9 @@
     if (videoElement) {
       videoElement.removeEventListener("timeupdate", handleTimeUpdate)
     }
-    window.removeEventListener("resize", updateTaglineLeft)
+    if (typeof window !== "undefined") {
+      window.removeEventListener("resize", updateTaglineLeft)
+    }
   })
 </script>
 
