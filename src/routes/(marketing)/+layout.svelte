@@ -16,40 +16,48 @@
   <div class="absolute top-8 left-0 right-0 z-50">
     <div class="navbar bg-transparent w-full px-4">
       <div class="flex-1 flex items-center">
-        <a class="relative group inline-flex ml-6" href="/">
+        <a class="relative group inline-flex ml-2 sm:ml-6" href="/">
+          <!-- Mobile: transparent logo -->
+          <img
+            src="/images/buoy_logo.svg"
+            alt={WebsiteName}
+            class="h-8 sm:hidden"
+          />
+          <!-- Desktop: white bg logo with blue bg hover -->
           <img
             src="/images/buoy_logo_white_bg.png"
             alt={WebsiteName}
-            class="h-12 md:h-16 rounded-lg transition-opacity duration-300 ease-in-out group-hover:opacity-0"
+            class="hidden sm:block h-12 md:h-16 rounded-lg transition-opacity duration-300 ease-in-out group-hover:opacity-0"
           />
           <img
             src="/images/buoy_logo_blue_bg.png"
             alt={WebsiteName}
-            class="h-12 md:h-16 rounded-lg absolute inset-0 transition-opacity duration-300 ease-in-out opacity-0 group-hover:opacity-100"
+            class="hidden sm:block h-12 md:h-16 rounded-lg absolute inset-0 transition-opacity duration-300 ease-in-out opacity-0 group-hover:opacity-100"
           />
           <span class="sr-only">{WebsiteName}</span>
         </a>
-        <!-- Mobile nav links — right-justified -->
-        <div class="sm:hidden flex items-center gap-1 ml-auto mr-2">
-          <a
-            href="https://app.buoy.fish/demo"
-            class="hover:bg-secondary hover:text-white text-sm font-semibold px-3 py-2 rounded-md transition-colors duration-300 {isHome
-              ? 'text-white drop-shadow-lg'
-              : 'text-primary'}">Demo</a
-          >
-          <a
-            href="https://app.buoy.fish"
-            class="hover:bg-secondary hover:text-white text-sm font-semibold px-3 py-2 rounded-md transition-colors duration-300 {isHome
-              ? 'text-white drop-shadow-lg'
-              : 'text-primary'}">App</a
-          >
-          <a
-            href="/contact_us"
-            class="hover:bg-secondary hover:text-white text-sm font-semibold px-3 py-2 rounded-md transition-colors duration-300 {isHome
-              ? 'text-white drop-shadow-lg'
-              : 'text-primary'}">Contact</a
-          >
-        </div>
+      </div>
+
+      <!-- Mobile nav links -->
+      <div class="sm:hidden flex-none flex items-center gap-0.5 rounded-lg px-1.5 py-1 {isHome ? 'bg-black/30 backdrop-blur-sm' : 'bg-white/70 backdrop-blur-sm'}">
+        <a
+          href="https://app.buoy.fish/demo"
+          class="hover:bg-secondary hover:text-white text-xs font-semibold px-2 py-1.5 rounded-md transition-colors duration-300 {isHome
+            ? 'text-white drop-shadow-lg'
+            : 'text-primary'}">Demo</a
+        >
+        <a
+          href="https://app.buoy.fish"
+          class="hover:bg-secondary hover:text-white text-xs font-semibold px-2 py-1.5 rounded-md transition-colors duration-300 {isHome
+            ? 'text-white drop-shadow-lg'
+            : 'text-primary'}">App</a
+        >
+        <a
+          href="/contact_us"
+          class="hover:bg-secondary hover:text-white text-xs font-semibold px-2 py-1.5 rounded-md transition-colors duration-300 {isHome
+            ? 'text-white drop-shadow-lg'
+            : 'text-primary'}">Contact</a
+        >
       </div>
 
       <div class="flex-none mr-4">
