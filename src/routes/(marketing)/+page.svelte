@@ -179,9 +179,14 @@
     }
 
     // Swap tagline: fade out "Solving..." and fade in "One buoy at a time."
-    if (t >= TAGLINE_SWAP && t < HUD_IN && !showSecondTagline) {
+    if (t >= TAGLINE_SWAP && t < HUD_IN - 0.25 && !showSecondTagline) {
       taglineHidden = true
       showSecondTagline = true
+    }
+
+    // Fade out second tagline 250ms before HUD
+    if (t >= HUD_IN - 0.25 && showSecondTagline) {
+      showSecondTagline = false
     }
 
     // Fade out zone
@@ -191,7 +196,7 @@
       return
     }
 
-    // HUD card appears, second tagline fades out
+    // HUD card appears
     if (t >= HUD_IN && !hudActive) {
       resetHudValues()
       pingStart = t
@@ -199,7 +204,6 @@
       lastDataUpdate = t
       showHud = true
       hudActive = true
-      showSecondTagline = false
     }
 
     if (hudActive) {
