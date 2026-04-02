@@ -14,7 +14,7 @@
 
   <!-- Navbar overlaid on top -->
   <div class="absolute top-8 left-0 right-0 z-50">
-    <div class="navbar bg-transparent w-full px-4">
+    <div class="navbar bg-transparent w-full pl-6 pr-[26px] sm:px-4">
       <div class="flex-1 flex items-center">
         <a class="relative group inline-flex ml-2 sm:ml-6" href="/">
           <!-- Mobile: transparent logo -->
@@ -60,7 +60,7 @@
         >
       </div>
 
-      <div class="flex-none mr-4">
+      <div class="hidden sm:block flex-none mr-4">
         <ul
           class="menu menu-horizontal hidden sm:flex font-extrabold text-xl gap-10"
         >

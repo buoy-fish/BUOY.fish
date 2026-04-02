@@ -216,4 +216,17 @@ const passwordProtect: Handle = async ({ event, resolve }) => {
   )
 }
 
-export const handle: Handle = sequence(passwordProtect, supabase, authGuard)
+// Silently return 404 for Chrome DevTools probe requests
+const ignoreBrowserProbes: Handle = async ({ event, resolve }) => {
+  if (event.url.pathname.startsWith("/.well-known/appspecific/")) {
+    return new Response(null, { status: 404 })
+  }
+  return resolve(event)
+}
+
+export const handle: Handle = sequence(
+  ignoreBrowserProbes,
+  passwordProtect,
+  supabase,
+  authGuard,
+)
