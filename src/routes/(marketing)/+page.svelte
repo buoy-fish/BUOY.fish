@@ -39,13 +39,13 @@
       darkBg: false,
     },
     {
-      name: "GoDeep",
-      logo: "/images/partners/godeep.png",
-      alt: "GoDeep International",
+      name: "Tidal Marine",
+      logo: "/images/partners/tidal.png",
+      alt: "Tidal Marine",
       description:
         "Buoy manufacturing partner for ruggedized commercial hardware.",
-      invert: false,
-      darkBg: false,
+      invert: true,
+      darkBg: true,
     },
     {
       name: "IRNAS",
