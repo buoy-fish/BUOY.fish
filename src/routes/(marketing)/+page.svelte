@@ -65,12 +65,10 @@
       darkBg: false,
     },
   ]
-  let scrollY = $state(0)
   let taglineEl: HTMLParagraphElement
   let taglineLeft = $state(0)
-  let taglineBaseOpacity = $derived(Math.max(0, 1 - scrollY / 400))
   let taglineHidden = $state(false) // stays true from HUD appearance until video loops
-  let taglineOpacity = $derived(taglineHidden ? 0 : taglineBaseOpacity)
+  let taglineOpacity = $derived(taglineHidden ? 0 : 1)
   let showSecondTagline = $state(false) // "One buoy at a time."
 
   // Typewriter effect — commented out, kept for future use
@@ -179,13 +177,13 @@
     }
 
     // Swap tagline: fade out "Solving..." and fade in "One buoy at a time."
-    if (t >= TAGLINE_SWAP && t < HUD_IN - 0.25 && !showSecondTagline) {
+    if (t >= TAGLINE_SWAP && t < HUD_IN - 1.25 && !showSecondTagline) {
       taglineHidden = true
       showSecondTagline = true
     }
 
-    // Fade out second tagline 250ms before HUD
-    if (t >= HUD_IN - 0.25 && showSecondTagline) {
+    // Fade out second tagline 1.25s before HUD
+    if (t >= HUD_IN - 1.25 && showSecondTagline) {
       showSecondTagline = false
     }
 
@@ -253,42 +251,7 @@
   <meta name="twitter:image" content="{WebsiteBaseUrl}/images/og-image.jpg" />
   <!-- eslint-disable-next-line svelte/no-at-html-tags -->
   {@html jsonldScript}
-  <link
-    href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap"
-    rel="stylesheet"
-  />
 </svelte:head>
-
-<svelte:window bind:scrollY />
-
-<!-- Tagline 1 — "Solving lost and abandoned fishing gear." -->
-<div
-  class="fixed left-1/2 -translate-x-1/2 top-28 hidden md:block z-50 pointer-events-none"
-  style="opacity: {taglineOpacity}; transition: opacity 1400ms ease"
->
-  <p
-    bind:this={taglineEl}
-    class="text-white font-semibold tracking-wide drop-shadow-lg whitespace-nowrap"
-    style="font-family: 'Poppins', sans-serif; font-size: 2.59rem"
-  >
-    Solving lost and abandoned fishing gear.
-  </p>
-</div>
-
-<!-- Tagline 2 — "One buoy at a time." -->
-<div
-  class="fixed left-1/2 -translate-x-1/2 top-[10.5rem] hidden md:block z-50 pointer-events-none"
-  style="opacity: {showSecondTagline
-    ? taglineBaseOpacity
-    : 0}; transition: opacity 1400ms ease 250ms"
->
-  <p
-    class="text-white font-semibold tracking-wide drop-shadow-lg whitespace-nowrap"
-    style="font-family: 'Poppins', sans-serif; font-size: 2.59rem"
-  >
-    One buoy at a time.
-  </p>
-</div>
 
 <!-- Hero Video Section -->
 <div class="relative h-screen w-full overflow-hidden">
@@ -310,6 +273,33 @@
     <source src="/videos/hero-video-optimized.webm" type="video/webm" />
     <source src="/videos/hero-video-optimized.mp4" type="video/mp4" />
   </video>
+
+  <!-- Tagline 1 — "Solving lost and abandoned fishing gear." -->
+  <div
+    class="absolute left-1/2 -translate-x-1/2 top-28 hidden md:block z-30 pointer-events-none"
+    style="opacity: {taglineOpacity}; transition: opacity 1400ms ease"
+  >
+    <p
+      bind:this={taglineEl}
+      class="text-white text-4xl font-semibold tracking-wide whitespace-nowrap"
+    >
+      Solving lost and abandoned fishing gear.
+    </p>
+  </div>
+
+  <!-- Tagline 2 — "One buoy at a time." -->
+  <div
+    class="absolute left-1/2 -translate-x-1/2 top-[10.5rem] hidden md:block z-30 pointer-events-none"
+    style="opacity: {showSecondTagline
+      ? 1
+      : 0}; transition: opacity 1400ms ease 250ms"
+  >
+    <p
+      class="text-white text-4xl font-semibold tracking-wide whitespace-nowrap"
+    >
+      One buoy at a time.
+    </p>
+  </div>
 
   <!-- Inspector HUD Overlay — Desktop: floating card, Mobile: compact top bar -->
   {#if showHud}
