@@ -41,7 +41,7 @@ npm run build
 
 echo -e "\n${YELLOW}☁️  Deploying to Cloudflare Pages...${NC}"
 npx wrangler pages deploy .svelte-kit/cloudflare \
-    --project-name=buoy-fish-website \
+    --project-name=buoy-production-website \
     --branch=main \
     --commit-dirty=true
 
