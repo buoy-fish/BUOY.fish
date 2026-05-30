@@ -10,7 +10,11 @@
 </script>
 
 <div class="relative">
-  {@render children()}
+  <!-- Home: hero sits behind the floating navbar by design.
+       Other pages: reserve space so the navbar doesn't overlap content. -->
+  <div class={isHome ? "" : "pt-24 md:pt-28"}>
+    {@render children()}
+  </div>
 
   <!-- Navbar overlaid on top -->
   <div class="absolute top-8 left-0 right-0 z-50">
