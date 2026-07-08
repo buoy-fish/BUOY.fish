@@ -43,7 +43,11 @@
       </div>
 
       <!-- Mobile nav links -->
-      <div class="sm:hidden flex-none flex items-center gap-0.5 rounded-lg px-1.5 py-1 {isHome ? 'bg-black/30 backdrop-blur-sm' : 'bg-white/70 backdrop-blur-sm'}">
+      <div
+        class="sm:hidden flex-none flex items-center gap-0.5 rounded-lg px-1.5 py-1 {isHome
+          ? 'bg-black/30 backdrop-blur-sm'
+          : 'bg-white/70 backdrop-blur-sm'}"
+      >
         <a
           href="https://app.buoy.fish/demo"
           class="hover:bg-secondary hover:text-white text-xs font-semibold px-2 py-1.5 rounded-md transition-colors duration-300 {isHome
