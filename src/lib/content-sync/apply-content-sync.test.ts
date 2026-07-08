@@ -2,8 +2,18 @@ import { describe, it, expect } from "vitest"
 import { applyDeploymentStage, VALID_STAGES } from "./apply-content-sync.mjs"
 
 const sample = () => [
-  { slug: "punta-abreojos-deployment", title: "A", stage: "completed", blurb: "x" },
-  { slug: "costa-rica-gulf-of-nicoya", title: "B", stage: "planned", blurb: "y" },
+  {
+    slug: "punta-abreojos-deployment",
+    title: "A",
+    stage: "completed",
+    blurb: "x",
+  },
+  {
+    slug: "costa-rica-gulf-of-nicoya",
+    title: "B",
+    stage: "planned",
+    blurb: "y",
+  },
 ]
 
 describe("applyDeploymentStage", () => {
@@ -33,9 +43,9 @@ describe("applyDeploymentStage", () => {
       slug: "costa-rica-gulf-of-nicoya",
       stage: "in_progress",
     })
-    expect(input.find((d) => d.slug === "costa-rica-gulf-of-nicoya")?.stage).toBe(
-      "planned",
-    )
+    expect(
+      input.find((d) => d.slug === "costa-rica-gulf-of-nicoya")?.stage,
+    ).toBe("planned")
   })
 
   it("throws when the slug is not present (never silently no-ops)", () => {
