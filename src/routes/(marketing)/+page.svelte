@@ -6,6 +6,7 @@
     WebsiteDescription,
   } from "./../../config"
   import { onMount, onDestroy } from "svelte"
+  import { deployments, stageMeta } from "$lib/data/deployments"
 
   let videoElement: HTMLVideoElement
   let trackEl: HTMLDivElement
@@ -604,61 +605,20 @@
       International, and DFO Canada.
     </p>
     <div class="grid md:grid-cols-2 gap-8">
-      <a
-        href="/blog/punta-abreojos-deployment"
-        class="card bg-base-200 shadow-md hover:shadow-lg transition-shadow"
-      >
-        <div class="card-body">
-          <div class="badge badge-success mb-2">Completed</div>
-          <h3 class="card-title">Punta Abreojos, Mexico</h3>
-          <p class="text-base-content/70">
-            80 smart buoys deployed in the spiny lobster fishery with Fedecoop.
-            600,000+ location payloads recorded. The largest connected gear
-            deployment in history.
-          </p>
-        </div>
-      </a>
-      <a
-        href="/blog/nova-scotia-trial"
-        class="card bg-base-200 shadow-md hover:shadow-lg transition-shadow"
-      >
-        <div class="card-body">
-          <div class="badge badge-success mb-2">Completed</div>
-          <h3 class="card-title">Nova Scotia, Canada (LFA35)</h3>
-          <p class="text-base-content/70">
-            60 smart buoys with Go Deep International across 5 fishing vessels.
-            Protecting endangered North Atlantic Right Whale habitat from ghost
-            gear.
-          </p>
-        </div>
-      </a>
-      <a
-        href="/blog/punta-eugenia-isla-natividad"
-        class="card bg-base-200 shadow-md hover:shadow-lg transition-shadow"
-      >
-        <div class="card-body">
-          <div class="badge badge-secondary mb-2">Next Month</div>
-          <h3 class="card-title">Punta Eugenia & Isla Natividad, Mexico</h3>
-          <p class="text-base-content/70">
-            Expanding in Baja California with upgraded inductive-charging buoys
-            and hardened spindle designs refined from field feedback.
-          </p>
-        </div>
-      </a>
-      <a
-        href="/blog/costa-rica-gulf-of-nicoya"
-        class="card bg-base-200 shadow-md hover:shadow-lg transition-shadow"
-      >
-        <div class="card-body">
-          <div class="badge badge-secondary mb-2">Planned</div>
-          <h3 class="card-title">Gulf of Nicoya, Costa Rica</h3>
-          <p class="text-base-content/70">
-            First Central American deployment. 5 gateways targeting 90% Gulf
-            coverage, including vessel-based gateways and a lighthouse
-            installation.
-          </p>
-        </div>
-      </a>
+      {#each deployments as d (d.slug)}
+        <a
+          href={`/blog/${d.slug}`}
+          class="card bg-base-200 shadow-md hover:shadow-lg transition-shadow"
+        >
+          <div class="card-body">
+            <div class="badge {stageMeta[d.stage].badgeClass} mb-2">
+              {stageMeta[d.stage].label}
+            </div>
+            <h3 class="card-title">{d.title}</h3>
+            <p class="text-base-content/70">{d.blurb}</p>
+          </div>
+        </a>
+      {/each}
     </div>
   </div>
 </section>

@@ -1,0 +1,68 @@
+# Receives structured content from app.buoy.fish via `repository_dispatch` and
+# turns it into a PR against this repo, which auto-merges once CI is green.
+# Contract + rationale: app.buoy.fish ADR-0009.
+#
+# The app is the source of truth for deployment stage + prose; THIS repo owns
+# how it renders itself (the transform in src/lib/content-sync). A single human
+# approval happens upstream (a Google Doc for prose, a one-click stage flip for
+# pills); delivery from here is fully automated.
+name: Website content sync
+
+on:
+  repository_dispatch:
+    # Payload schema per ADR-0009 §Consequences. `deployment_stage` is live;
+    # `blog_publish` / `tile_remove` are the next slice (the app side isn't
+    # wired yet either).
+    types: [deployment_stage, blog_publish, tile_remove]
+
+# NOTE: The default GITHUB_TOKEN cannot be used here. PRs opened by GITHUB_TOKEN
+# do NOT trigger other workflows, so deploy.yml's PR checks would never run and
+# `--auto` merge would wait forever. A separate token (a fine-grained PAT or a
+# GitHub App installation token) whose events DO trigger CI is required, stored
+# as the CONTENT_SYNC_TOKEN secret. TODO(setup): mint it and add the secret.
+jobs:
+  build-pr:
+    name: Build content PR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.CONTENT_SYNC_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Apply payload to content files
+        env:
+          EVENT_TYPE: ${{ github.event.action }}
+          CLIENT_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+        run: node src/lib/content-sync/apply-content-sync.mjs
+
+      - name: Open auto-merging PR
+        env:
+          GH_TOKEN: ${{ secrets.CONTENT_SYNC_TOKEN }}
+          EVENT_TYPE: ${{ github.event.action }}
+          SLUG: ${{ github.event.client_payload.slug }}
+        run: |
+          set -euo pipefail
+          BRANCH="content-sync/${EVENT_TYPE}-${SLUG}-${GITHUB_RUN_ID}"
+          git config user.name "buoy-content-bot"
+          git config user.email "bot@buoy.fish"
+          git checkout -b "$BRANCH"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes produced by ${EVENT_TYPE} for ${SLUG}; nothing to publish."
+            exit 0
+          fi
+          git commit -m "content-sync: ${EVENT_TYPE} for ${SLUG}"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "content-sync: ${EVENT_TYPE} — ${SLUG}" \
+            --body "Automated from app.buoy.fish (\`${EVENT_TYPE}\`). Approved upstream; auto-merges on green CI. See ADR-0009." \
+            --base main --head "$BRANCH"
+          # Auto-merge once required checks (deploy.yml on PR) pass.
+          gh pr merge "$BRANCH" --auto --squash --delete-branch
