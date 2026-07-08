@@ -64,6 +64,15 @@
       invert: false,
       darkBg: false,
     },
+    {
+      name: "Alchemist",
+      logo: "/images/partners/alchemist.png",
+      alt: "Alchemist Accelerator",
+      description:
+        "Enterprise startup accelerator — BUOY joined as part of Class 40.",
+      invert: true,
+      darkBg: true,
+    },
   ]
   let taglineEl: HTMLParagraphElement
   let taglineLeft = $state(0)
