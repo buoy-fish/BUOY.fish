@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from "$app/stores"
   import { WebsiteName } from "./../../config"
+  import ChatWidget from "$lib/ChatWidget.svelte"
   import "../../app.css"
   import type { Snippet } from "svelte"
 
@@ -133,4 +134,8 @@
       </aside>
     </footer>
   </div>
+
+  <!-- Live-chat "message us" widget (Chatwoot). Inert until the PUBLIC_CHATWOOT_*
+       env vars are set in the Cloudflare Pages project. -->
+  <ChatWidget />
 </div>
