@@ -31,15 +31,6 @@
       darkBg: true,
     },
     {
-      name: "CDFW",
-      logo: "/images/partners/cdfw.png",
-      alt: "California Department of Fish and Wildlife",
-      description:
-        "Collaborating on gear tracking and recovery in California waters.",
-      invert: false,
-      darkBg: false,
-    },
-    {
       name: "Tidal Marine",
       logo: "/images/partners/tidal.png",
       alt: "Tidal Marine",
