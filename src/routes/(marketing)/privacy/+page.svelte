@@ -104,8 +104,8 @@
         messages. You can opt out of text messages at any time by replying <strong
           >STOP</strong
         >
-        to any message from us, by switching to email-based sign-in in your
-        account settings, or by contacting
+        to any message from us, by switching to email-based sign-in in your account
+        settings, or by contacting
         <a href="mailto:support@buoy.fish">support@buoy.fish</a>. Reply
         <strong>HELP</strong>
         to any message for help. Message and data rates may apply. See our
