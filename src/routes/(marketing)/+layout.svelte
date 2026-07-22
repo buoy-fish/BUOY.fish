@@ -114,7 +114,7 @@
   <div class="mt-auto">
     <div class="border-t max-w-[1000px] mx-auto"></div>
     <footer
-      class="footer p-10 gap-x-48 lg:gap-x-64 xl:gap-x-96 place-content-center text-base"
+      class="footer p-10 gap-x-24 lg:gap-x-40 xl:gap-x-64 place-content-center text-base"
     >
       <nav>
         <span class="footer-title opacity-80">Explore</span>
@@ -132,6 +132,12 @@
           >hello@buoy.fish</a
         >
       </aside>
+      <nav>
+        <span class="footer-title opacity-80">Legal</span>
+        <a class="link link-hover mb-1" href="/privacy">Privacy Policy</a>
+        <a class="link link-hover my-1" href="/terms">Terms of Service</a>
+        <a class="link link-hover my-1" href="/sms-terms">SMS Terms</a>
+      </nav>
     </footer>
   </div>
 
