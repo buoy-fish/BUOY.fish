@@ -147,6 +147,33 @@
                 />
               {/if}
             </label>
+            {#if field.id === "phone"}
+              <!-- SMS consent (TCPA / toll-free verification): optional and
+                   never pre-checked. The exact text shown here is stored with
+                   the submission — keep it in sync with $lib/sms_consent.ts -->
+              <div class="flex flex-row items-start gap-3 mb-3">
+                <input
+                  id="sms_consent"
+                  name="sms_consent"
+                  type="checkbox"
+                  class="checkbox checkbox-sm mt-1 flex-shrink-0"
+                />
+                <label
+                  for="sms_consent"
+                  class="text-xs leading-snug cursor-pointer"
+                >
+                  By checking this box, I agree to receive text messages from
+                  Buoy-Fish, Inc. at the mobile number provided, including
+                  replies to my inquiry, account and service notifications, and
+                  login verification codes (e.g., &ldquo;Your Buoy.Fish
+                  verification code is 482913&rdquo;). Consent is not a
+                  condition of purchase. Message frequency varies. Message and
+                  data rates may apply. Reply STOP to opt out or HELP for help.
+                  See our <a href="/sms-terms" class="link">SMS Terms</a>
+                  and <a href="/privacy" class="link">Privacy Policy</a>.
+                </label>
+              </div>
+            {/if}
           {/each}
 
           {#if Object.keys(errors).length > 0}

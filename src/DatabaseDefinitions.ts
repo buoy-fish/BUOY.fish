@@ -18,6 +18,11 @@ export interface Database {
           last_name: string | null
           message_body: string | null
           phone: string | null
+          sms_consent: boolean
+          sms_consent_at: string | null
+          sms_consent_text: string | null
+          sms_consent_ip: string | null
+          sms_consent_user_agent: string | null
           updated_at: Date | null
         }
         Insert: {
@@ -28,6 +33,11 @@ export interface Database {
           last_name?: string | null
           message_body?: string | null
           phone?: string | null
+          sms_consent?: boolean
+          sms_consent_at?: string | null
+          sms_consent_text?: string | null
+          sms_consent_ip?: string | null
+          sms_consent_user_agent?: string | null
           updated_at?: Date | null
         }
         Update: {
@@ -38,6 +48,11 @@ export interface Database {
           last_name?: string | null
           message_body?: string | null
           phone?: string | null
+          sms_consent?: boolean
+          sms_consent_at?: string | null
+          sms_consent_text?: string | null
+          sms_consent_ip?: string | null
+          sms_consent_user_agent?: string | null
           updated_at?: Date | null
         }
         Relationships: []
