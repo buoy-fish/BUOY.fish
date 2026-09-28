@@ -40,9 +40,17 @@ jobs:
       - name: Production build
         run: npm run build
 
+      - name: Test post-deploy check script
+        run: bash scripts/test/post-deploy-check.test.sh
+
   deploy:
     name: Deploy to Cloudflare Pages
     needs: test
+    # Serialize deploys so each run's post-deploy check sees its own build,
+    # not a newer one deployed by an overlapping run.
+    concurrency:
+      group: deploy-buoy-fish-website
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
@@ -75,3 +83,9 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy .svelte-kit/cloudflare --project-name=buoy-production-website --branch=main --commit-dirty=true
+
+      # buoy-fish/monitoring#42: wrangler going green only means Pages
+      # accepted the upload. Assert https://buoy.fish now serves the build
+      # this job produced (version.json + home page entry chunk).
+      - name: Post-deploy health check
+        run: bash scripts/post-deploy-check.sh --base-url https://buoy.fish --build-dir .svelte-kit/cloudflare --timeout 180
