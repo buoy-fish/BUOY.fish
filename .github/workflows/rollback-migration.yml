@@ -55,7 +55,7 @@ jobs:
           url: https://bao.buoy.fish
           method: jwt
           path: github-actions
-          role: BUOY.fish-deploy
+          role: buoy.fish-deploy
           jwtGithubAudience: https://bao.buoy.fish
           secrets: |
             secret/data/BUOY.fish/deploy SUPABASE_DB_URL
