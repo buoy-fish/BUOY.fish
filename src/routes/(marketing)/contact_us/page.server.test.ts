@@ -7,22 +7,23 @@ import {
   TEST_SITE_LEADS_TOKEN,
 } from "$lib/app_leads_test_helpers"
 import { SMS_CONSENT_RECORD } from "$lib/sms_consent"
-import { TURNSTILE_FAILED_MESSAGE } from "$lib/turnstile"
+import { TURNSTILE_FAILED_MESSAGE } from "$lib/app_leads"
 import { actions } from "./+page.server"
 
-function submit(fields: Record<string, string>) {
+function submit(
+  fields: Record<string, string>,
+  headers: Record<string, string> = { "cf-connecting-ip": "203.0.113.7" },
+  clientAddress: () => string = () => "10.0.0.1",
+) {
   const body = new FormData()
   for (const [k, v] of Object.entries(fields)) body.set(k, v)
   const event = {
     request: new Request("http://localhost/contact_us", {
       method: "POST",
       body,
-      headers: {
-        "user-agent": "test-agent",
-        "cf-connecting-ip": "203.0.113.7",
-      },
+      headers: { "user-agent": "test-agent", ...headers },
     }),
-    getClientAddress: () => "10.0.0.1",
+    getClientAddress: clientAddress,
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return actions.submitContactUs(event as any)
@@ -43,6 +44,7 @@ describe("submitContactUs", () => {
     vi.clearAllMocks()
     vi.unstubAllGlobals()
     env.PRIVATE_SITE_LEADS_TOKEN = TEST_SITE_LEADS_TOKEN
+    env.PRIVATE_APP_URL = ""
   })
 
   it("sends the lead to the app with the visitor's IP, user agent and Turnstile token", async () => {
@@ -129,6 +131,43 @@ describe("submitContactUs", () => {
       data: { errors: { _: expect.stringContaining("hello@buoy.fish") } },
     })
     expect(log).toHaveBeenCalled()
+  })
+
+  it("posts to PRIVATE_APP_URL when set, so local dev can use a local app", async () => {
+    env.PRIVATE_APP_URL = "http://localhost:4000"
+    const app = stubAppLeads(
+      undefined,
+      201,
+      "http://localhost:4000/api/v1/site/leads",
+    )
+
+    expect(await submit(validContact)).toBeUndefined()
+    expect(app.leads).toHaveLength(1)
+  })
+
+  it("never calls the app without the visitor's IP, and logs it as the site's fault", async () => {
+    const app = stubAppLeads()
+    const log = vi.spyOn(console, "error").mockImplementation(() => {})
+
+    const result = await submit(validContact, {}, () => {
+      throw new Error("no address on this platform")
+    })
+
+    expect(result).toMatchObject({
+      status: 500,
+      data: { errors: { _: expect.stringContaining("hello@buoy.fish") } },
+    })
+    expect(app.leads).toEqual([])
+    expect(log).toHaveBeenCalled()
+  })
+
+  it("shows the fallback when the app's 422 names no field", async () => {
+    stubAppLeads({ errors: {} }, 422)
+    vi.spyOn(console, "error").mockImplementation(() => {})
+
+    expect(await submit(validContact)).toMatchObject({
+      data: { errors: { _: expect.stringContaining("hello@buoy.fish") } },
+    })
   })
 
   it("never calls the app without a token, and fails loudly", async () => {

@@ -1,7 +1,7 @@
 // Select options for the /propose form, shared by the page (to render them)
-// and the action (to validate the submitted value and label it in the email).
-// The `value` is what's stored in contact_requests.details, so treat values as
-// a stored enum: add new ones freely, but don't rename existing ones.
+// and the action (to validate the submitted value). The `value` is what's stored
+// in the app.buoy.fish lead's details (ADR-0039), so treat values as a stored
+// enum: add new ones freely, but don't rename existing ones.
 export type ProposalOption = { value: string; label: string }
 
 export const FUNDING_OPTIONS: ProposalOption[] = [

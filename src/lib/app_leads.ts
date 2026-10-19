@@ -1,11 +1,22 @@
 import { fail } from "@sveltejs/kit"
 import { env } from "$env/dynamic/private"
-import { TURNSTILE_FAILED_MESSAGE } from "$lib/turnstile"
 
 // Contact and pilot submissions live in app.buoy.fish (ADR-0039). This server
 // action client is the only way a lead leaves the site: the app verifies
 // Turnstile, stores the lead with its SMS-consent evidence, and emails hello@.
-const APP_LEADS_URL = "https://app.buoy.fish/api/v1/site/leads"
+// PRIVATE_APP_URL points local dev at a local app (http://localhost:4000).
+const leadsUrl = () =>
+  `${env.PRIVATE_APP_URL || "https://app.buoy.fish"}/api/v1/site/leads`
+
+// The app stores the lead and then emails hello@ inside the same request, so a
+// short timeout here could abort after the row is saved and send the visitor
+// to resubmit. Deliberate ceiling: 30s covers the app's own bounded calls
+// (bao, siteverify, Resend); a slower app still produces a duplicate.
+const TIMEOUT_MS = 30_000
+
+// Shown in `errors._` when the app refuses the form's Turnstile token.
+export const TURNSTILE_FAILED_MESSAGE =
+  "We couldn't confirm you're not a bot. Reload the page and try again, or email hello@buoy.fish."
 
 export type Lead = {
   kind: "contact" | "pilot"
@@ -24,7 +35,7 @@ export type Lead = {
 }
 
 export type LeadResult =
-  | { ok: true; notified: boolean }
+  | { ok: true }
   | { ok: false; reason: "invalid"; errors: Record<string, string> }
   | { ok: false; reason: "turnstile" | "rate_limited" | "unavailable" }
 
@@ -37,10 +48,18 @@ export const submitLead = async (lead: Lead): Promise<LeadResult> => {
     )
     return { ok: false, reason: "unavailable" }
   }
+  // The app rate-limits by it and keeps it as SMS-consent evidence, so it
+  // refuses a lead without one. Missing means this platform isn't telling us.
+  if (!lead.visitor_ip) {
+    console.error(
+      "Lead not sent: no visitor IP (cf-connecting-ip absent and getClientAddress failed).",
+    )
+    return { ok: false, reason: "unavailable" }
+  }
 
   let resp: Response
   try {
-    resp = await fetch(APP_LEADS_URL, {
+    resp = await fetch(leadsUrl(), {
       method: "POST",
       headers: {
         authorization: `Bearer ${env.PRIVATE_SITE_LEADS_TOKEN}`,
@@ -48,7 +67,7 @@ export const submitLead = async (lead: Lead): Promise<LeadResult> => {
         accept: "application/json",
       },
       body: JSON.stringify(lead),
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
     })
   } catch (e) {
     console.error("Lead not sent: app.buoy.fish unreachable", e)
@@ -63,11 +82,12 @@ export const submitLead = async (lead: Lead): Promise<LeadResult> => {
         `Lead ${body?.id} saved in app.buoy.fish, but its hello@ email failed`,
       )
     }
-    return { ok: true, notified: body?.notified !== false }
+    return { ok: true }
   }
 
-  if (resp.status === 422 && body?.errors) {
-    return { ok: false, reason: "invalid", errors: firstMessages(body.errors) }
+  const errors = firstMessages(body?.errors)
+  if (resp.status === 422 && Object.keys(errors).length > 0) {
+    return { ok: false, reason: "invalid", errors }
   }
   if (resp.status === 403) return { ok: false, reason: "turnstile" }
   if (resp.status === 429) return { ok: false, reason: "rate_limited" }
@@ -77,17 +97,21 @@ export const submitLead = async (lead: Lead): Promise<LeadResult> => {
 }
 
 // The app answers `{field: ["message", ...]}`; a form shows one line per field.
-const firstMessages = (errors: Record<string, string[]>) =>
-  Object.fromEntries(
+const firstMessages = (errors: unknown): Record<string, string> => {
+  if (!errors || typeof errors !== "object" || Array.isArray(errors)) return {}
+  return Object.fromEntries(
     Object.entries(errors).map(([field, messages]) => {
-      const first = String(messages?.[0] ?? "is invalid")
+      const first = String(
+        (Array.isArray(messages) && messages[0]) || "is invalid",
+      )
       return [field, first.charAt(0).toUpperCase() + first.slice(1)]
     }),
   )
+}
 
 // What a failed submission shows. `formFields` maps the app's lead fields to
-// this form's input names; an error on anything else (the visitor's IP, the
-// lead kind) is the site's bug, not the visitor's, so it gets the fallback.
+// this form's input names; an error on anything else (the lead kind, details)
+// is the site's bug, not the visitor's, so it gets the fallback.
 export const leadFailure = (
   result: Exclude<LeadResult, { ok: true }>,
   formFields: Record<string, string>,

@@ -10,12 +10,13 @@ export const TEST_SITE_LEADS_TOKEN = "test-site-leads-token"
 export function stubAppLeads(
   body: unknown = { id: "lead-1", notified: true },
   status = 201,
+  url = APP_LEADS_URL,
 ) {
   const leads: Record<string, unknown>[] = []
   vi.stubGlobal(
     "fetch",
-    vi.fn(async (url: string | URL, init?: RequestInit) => {
-      if (String(url) !== APP_LEADS_URL || init?.method !== "POST") {
+    vi.fn(async (input: string | URL, init?: RequestInit) => {
+      if (String(input) !== url || init?.method !== "POST") {
         return new Response("Not Found", { status: 404 })
       }
       const auth = new Headers(init.headers).get("authorization")

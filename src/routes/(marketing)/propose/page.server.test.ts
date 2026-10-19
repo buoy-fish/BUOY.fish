@@ -7,7 +7,7 @@ import {
   TEST_SITE_LEADS_TOKEN,
 } from "$lib/app_leads_test_helpers"
 import { SMS_CONSENT_RECORD } from "$lib/sms_consent"
-import { TURNSTILE_FAILED_MESSAGE } from "$lib/turnstile"
+import { TURNSTILE_FAILED_MESSAGE } from "$lib/app_leads"
 import { actions } from "./+page.server"
 
 function submit(fields: Record<string, string>) {
@@ -33,6 +33,7 @@ describe("submitProposal", () => {
     vi.clearAllMocks()
     vi.unstubAllGlobals()
     env.PRIVATE_SITE_LEADS_TOKEN = TEST_SITE_LEADS_TOKEN
+    env.PRIVATE_APP_URL = ""
   })
 
   it("requires name, email and the problem, and saves nothing", async () => {
@@ -121,15 +122,14 @@ describe("submitProposal", () => {
         phone: "",
         message: "Longlines get cut by trawlers and we lose them.",
         sms_consent: false,
-        // Labels, not option codes: the record and the hello@ email show
-        // what the visitor picked, in their words.
+        // Option codes, not labels: proposal_options.ts values are a stored enum.
         details: {
           role: "Cooperative manager",
           region: "Gulf of Nicoya, Costa Rica",
           gear_type: "Bottom longlines",
           fleet_size: "14 pangas",
-          funding: "Applying for a grant or program",
-          timeline: "In 3 to 6 months",
+          funding: "applying",
+          timeline: "3_6_months",
           referral: "Your blog",
         },
         turnstile_token: "token",

@@ -1,14 +1,10 @@
 import { fail } from "@sveltejs/kit"
 import { leadFailure, submitLead } from "$lib/app_leads"
 import { getClientIp, SMS_CONSENT_RECORD } from "$lib/sms_consent"
-import {
-  FUNDING_OPTIONS,
-  TIMELINE_OPTIONS,
-  type ProposalOption,
-} from "./proposal_options"
+import { FUNDING_OPTIONS, TIMELINE_OPTIONS } from "./proposal_options"
 
 // Optional answers sent as the lead's details. Empty -> null, so every pilot
-// lead has the same keys; a picked option is sent as its label, as shown.
+// lead has the same keys.
 const DETAIL_FIELDS = [
   "role",
   "region",
@@ -82,16 +78,8 @@ export const actions = {
       return fail(400, { errors })
     }
 
-    const labelOf = (options: ProposalOption[], value: string) =>
-      options.find((o) => o.value === value)?.label ?? value
     const details = Object.fromEntries(
-      DETAIL_FIELDS.map((name) => {
-        const value = field(name).trim()
-        if (!value) return [name, null]
-        if (name === "funding") return [name, labelOf(FUNDING_OPTIONS, value)]
-        if (name === "timeline") return [name, labelOf(TIMELINE_OPTIONS, value)]
-        return [name, value]
-      }),
+      DETAIL_FIELDS.map((name) => [name, field(name).trim() || null]),
     )
 
     const result = await submitLead({
