@@ -3,24 +3,30 @@
     "slug": "punta-abreojos-deployment",
     "title": "Punta Abreojos, Mexico",
     "stage": "completed",
-    "blurb": "80 smart buoys deployed in the spiny lobster fishery with Fedecoop. 600,000+ location payloads recorded. The largest connected gear deployment in history."
+    "blurb": "80 smart buoys deployed in the spiny lobster fishery with Fedecoop. 600,000+ location payloads recorded. The largest connected gear deployment in history.",
+    "app_code": "punta-abreojos-baja"
   },
   {
     "slug": "nova-scotia-trial",
     "title": "Nova Scotia, Canada (LFA35)",
     "stage": "completed",
-    "blurb": "60 smart buoys with Go Deep International across 5 fishing vessels. Protecting endangered North Atlantic Right Whale habitat from ghost gear."
+    "blurb": "60 smart buoys with Go Deep International across 5 fishing vessels. Protecting endangered North Atlantic Right Whale habitat from ghost gear.",
+    "app_code": "nova-scotia"
   },
   {
     "slug": "punta-eugenia-isla-natividad",
     "title": "Punta Eugenia & Isla Natividad, Mexico",
     "stage": "completed",
-    "blurb": "Expanding in Baja California with upgraded inductive-charging buoys and hardened spindle designs refined from field feedback."
+    "blurb": "Expanding in Baja California with upgraded inductive-charging buoys and hardened spindle designs refined from field feedback.",
+    "app_code": "punta-eugenia-baja",
+    "started_on": "2025-10-25"
   },
   {
     "slug": "costa-rica-gulf-of-nicoya",
     "title": "Gulf of Nicoya, Costa Rica",
-    "stage": "planned",
-    "blurb": "First Central American deployment. 5 gateways targeting 90% Gulf coverage, including vessel-based gateways and a lighthouse installation."
+    "stage": "in_progress",
+    "blurb": "Live since July 2026: our first Central American deployment. 5 gateways around the Gulf, 28 smart buoys and 14 vessel trackers with artisanal fishermen.",
+    "app_code": "gulf-of-nicoya-costa-rica",
+    "started_on": "2026-07-24"
   }
 ]

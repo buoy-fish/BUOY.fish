@@ -19,9 +19,33 @@ export type Deployment = {
   title: string
   stage: DeploymentStage
   blurb: string
+  /** The app project's `code`, which is also its map.buoy.fish path. */
+  app_code?: string
+  /** Go-live date (YYYY-MM-DD); starts the coverage timeline playback. */
+  started_on?: string
 }
 
 export const deployments: Deployment[] = deploymentsData as Deployment[]
+
+const MAP_BASE = "https://map.buoy.fish"
+
+/**
+ * Deep links into map.buoy.fish for a deployment: its coverage map, and the
+ * coverage timeline played from go-live (format from map.buoy.fish's
+ * assets/js/utils/timelineLink.js). Null when there is no app project.
+ */
+export function mapLinks(
+  d: Deployment,
+): { coverage: string; timeline: string | null } | null {
+  if (!d.app_code) return null
+  const code = encodeURIComponent(d.app_code)
+  return {
+    coverage: `${MAP_BASE}/${code}`,
+    timeline: d.started_on
+      ? `${MAP_BASE}/?play=${code}&start=${d.started_on}`
+      : null,
+  }
+}
 
 /** Pill label + DaisyUI badge class per stage. */
 export const stageMeta: Record<
