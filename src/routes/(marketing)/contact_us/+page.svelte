@@ -2,6 +2,7 @@
   import { enhance, applyAction } from "$app/forms"
   import type { SubmitFunction } from "@sveltejs/kit"
   import type { FullAutoFill } from "svelte/elements"
+  import { SMS_CONSENT_LABEL, SMS_CONSENT_TEXT } from "$lib/sms_consent"
 
   let errors: { [fieldName: string]: string } = $state({})
   let loading = $state(false)
@@ -65,7 +66,9 @@
       } else if (result.type === "failure") {
         errors = result.data?.errors ?? {}
       } else if (result.type === "error") {
-        errors = { _: "An error occurred. Please check inputs and try again." }
+        errors = {
+          _: "Something went wrong sending your message. Email hello@buoy.fish instead.",
+        }
       }
     }
   }
@@ -147,36 +150,37 @@
                 />
               {/if}
             </label>
-            {#if field.id === "phone"}
-              <!-- SMS consent (TCPA / toll-free verification): optional and
-                   never pre-checked. The exact text shown here is stored with
-                   the submission — keep it in sync with $lib/sms_consent.ts -->
-              <div class="flex flex-row items-start gap-3 mb-3">
-                <input
-                  id="sms_consent"
-                  name="sms_consent"
-                  type="checkbox"
-                  class="checkbox checkbox-sm mt-1 flex-shrink-0"
-                />
-                <label
-                  for="sms_consent"
-                  class="text-xs leading-snug cursor-pointer"
-                >
-                  By checking this box, I agree to receive text messages from
-                  Buoy-Fish, Inc. at the mobile number provided, including
-                  replies to my inquiry, account and service notifications, and
-                  login verification codes (e.g., &ldquo;Your Buoy.Fish
-                  verification code is 482913&rdquo;). Consent is not a
-                  condition of purchase. Message frequency varies. Message and
-                  data rates may apply. Reply STOP to opt out or HELP for help.
-                  See our <a href="/sms-terms" class="link">SMS Terms</a>
-                  and <a href="/privacy" class="link">Privacy Policy</a>.
-                </label>
-              </div>
-            {/if}
           {/each}
 
-          {#if Object.keys(errors).length > 0}
+          <!-- SMS consent (TCPA / toll-free verification): optional, never
+               pre-checked, and never required to submit. The label and the
+               Details text come from $lib/sms_consent, which the server stores
+               with each opt-in. -->
+          <div class="flex flex-row items-start gap-3 mt-1 mb-4">
+            <input
+              id="sms_consent"
+              name="sms_consent"
+              type="checkbox"
+              class="checkbox checkbox-sm mt-0.5 flex-shrink-0"
+            />
+            <div class="text-xs leading-snug text-base-content/70">
+              <label for="sms_consent" class="cursor-pointer">
+                {SMS_CONSENT_LABEL}
+              </label>
+              <a href="/sms-terms" class="link">SMS Terms</a>,
+              <a href="/privacy" class="link">Privacy</a>.
+              <details class="mt-1">
+                <summary class="cursor-pointer link link-hover w-fit">
+                  Details
+                </summary>
+                <p class="mt-1">{SMS_CONSENT_TEXT}</p>
+              </details>
+            </div>
+          </div>
+
+          {#if errors._}
+            <p class="text-red-600 text-sm mb-2">{errors._}</p>
+          {:else if Object.keys(errors).length > 0}
             <p class="text-red-600 text-sm mb-2">
               Please resolve above issues.
             </p>

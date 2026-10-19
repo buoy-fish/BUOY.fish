@@ -13,3 +13,12 @@ export const SMS_CONSENT_TEXT: string =
   "purchase. Message frequency varies. Message and data rates may apply. Reply " +
   "STOP to opt out or HELP for help. See our SMS Terms (https://buoy.fish/sms-terms) " +
   "and Privacy Policy (https://buoy.fish/privacy)."
+
+// The short label shown beside the checkbox. The full disclosure above sits one
+// click away under "Details" on the same form, so the stored record carries both.
+export const SMS_CONSENT_LABEL: string =
+  "Text me about my inquiry. Message frequency varies; message and data rates " +
+  "may apply. Reply STOP to opt out or HELP for help."
+
+// What the server stores with each consent event: exactly what the form showed.
+export const SMS_CONSENT_RECORD: string = `${SMS_CONSENT_LABEL}\n\n${SMS_CONSENT_TEXT}`
