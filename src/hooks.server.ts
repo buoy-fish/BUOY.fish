@@ -1,7 +1,8 @@
 // src/hooks.server.ts
 import { PUBLIC_SITE_ACCESS } from "$env/static/public"
-import type { Handle } from "@sveltejs/kit"
+import { redirect, type Handle } from "@sveltejs/kit"
 import { sequence } from "@sveltejs/kit/hooks"
+import { retiredRouteRedirect } from "$lib/retired_routes"
 
 const SITE_PASSWORD = "BUOY" // Replace with your desired password
 
@@ -132,4 +133,15 @@ const ignoreBrowserProbes: Handle = async ({ event, resolve }) => {
   return resolve(event)
 }
 
-export const handle: Handle = sequence(ignoreBrowserProbes, passwordProtect)
+// Permanent redirects for the template routes ADR-0039 removed ($lib/retired_routes).
+const redirectRetiredRoutes: Handle = async ({ event, resolve }) => {
+  const target = retiredRouteRedirect(event.url.pathname)
+  if (target) redirect(301, target)
+  return resolve(event)
+}
+
+export const handle: Handle = sequence(
+  ignoreBrowserProbes,
+  redirectRetiredRoutes,
+  passwordProtect,
+)
