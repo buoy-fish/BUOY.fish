@@ -43,9 +43,31 @@ jobs:
       - name: Test post-deploy check script
         run: bash scripts/test/post-deploy-check.test.sh
 
+  migrations:
+    name: Migrations roundtrip
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.121.0
+
+      - name: Every migration has a rollback
+        run: |
+          bash scripts/test/check-migration-rollbacks.test.sh
+          bash scripts/check-migration-rollbacks.sh
+
+      - name: Apply, roll back, re-apply against a throwaway Supabase Postgres
+        env:
+          SUPABASE: supabase
+        run: |
+          supabase db start
+          bash scripts/migration-roundtrip.sh
+
   deploy:
     name: Deploy to Cloudflare Pages
-    needs: test
+    needs: [test, migrations]
     # Serialize deploys so each run's post-deploy check sees its own build,
     # not a newer one deployed by an overlapping run.
     concurrency:
@@ -57,6 +79,7 @@ jobs:
     permissions:
       contents: read
       deployments: write
+      id-token: write # GitHub OIDC -> OpenBao
 
     steps:
       - uses: actions/checkout@v5
@@ -67,6 +90,33 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      # GitHub OIDC -> role BUOY.fish-deploy, read-only on secret/BUOY.fish/*.
+      # Values are managed at https://bao.buoy.fish (secret/BUOY.fish/deploy):
+      # rotate there, not in GitHub.
+      - name: Fetch deploy secrets from OpenBao
+        uses: hashicorp/vault-action@v3
+        with:
+          url: https://bao.buoy.fish
+          method: jwt
+          path: github-actions
+          role: BUOY.fish-deploy
+          jwtGithubAudience: https://bao.buoy.fish
+          secrets: |
+            secret/data/BUOY.fish/deploy SUPABASE_DB_URL
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.121.0
+
+      # Migrations run BEFORE the new code ships, so each one must be
+      # backward-compatible with the code currently live (expand, deploy,
+      # then contract in a later PR). Every one has a tested rollback in
+      # supabase/rollbacks/; undo with the "Roll back a migration" workflow.
+      - name: Apply database migrations
+        run: |
+          supabase db push --dry-run --db-url "$SUPABASE_DB_URL"
+          supabase db push --db-url "$SUPABASE_DB_URL"
 
       - name: Build
         env:

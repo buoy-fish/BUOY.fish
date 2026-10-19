@@ -1,0 +1,66 @@
+name: Roll back a migration
+
+# Manual undo for one production migration: runs its tested
+# supabase/rollbacks/<version>_*.down.sql, then marks it reverted in the
+# migration history so a later deploy can re-apply it. Roll back newest-first,
+# and revert or fix the migration file in main before the next deploy, or the
+# next deploy will apply it again.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Migration version to roll back (14 digits, e.g. 20261018000000)"
+        required: true
+      confirm:
+        description: "Type the version again to confirm"
+        required: true
+
+concurrency:
+  group: deploy-buoy-fish-website
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # GitHub OIDC -> OpenBao
+    env:
+      VERSION: ${{ inputs.version }}
+      CONFIRM: ${{ inputs.confirm }}
+    steps:
+      - name: Validate input
+        run: |
+          [[ "$VERSION" =~ ^[0-9]{14}$ ]] || { echo "::error::version must be 14 digits"; exit 1; }
+          [ "$VERSION" = "$CONFIRM" ] || { echo "::error::confirmation does not match"; exit 1; }
+
+      - uses: actions/checkout@v5
+
+      - name: Find the rollback file
+        run: |
+          shopt -s nullglob
+          files=(supabase/rollbacks/"$VERSION"_*.down.sql)
+          [ ${#files[@]} -eq 1 ] || { echo "::error::expected one rollback for $VERSION, found ${#files[@]}"; exit 1; }
+          echo "DOWN_FILE=${files[0]}" >> "$GITHUB_ENV"
+
+      - name: Fetch deploy secrets from OpenBao
+        uses: hashicorp/vault-action@v3
+        with:
+          url: https://bao.buoy.fish
+          method: jwt
+          path: github-actions
+          role: BUOY.fish-deploy
+          jwtGithubAudience: https://bao.buoy.fish
+          secrets: |
+            secret/data/BUOY.fish/deploy SUPABASE_DB_URL
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.121.0
+
+      - name: Roll back
+        run: |
+          echo "Rolling back $VERSION with $DOWN_FILE"
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 --single-transaction -f "$DOWN_FILE"
+          supabase migration repair "$VERSION" --status reverted --db-url "$SUPABASE_DB_URL"
+          supabase migration list --db-url "$SUPABASE_DB_URL"
