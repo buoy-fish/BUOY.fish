@@ -1,6 +1,6 @@
 import { fail } from "@sveltejs/kit"
 import { sendAdminEmail } from "$lib/mailer.js"
-import { SMS_CONSENT_TEXT } from "$lib/sms_consent"
+import { SMS_CONSENT_RECORD } from "$lib/sms_consent"
 
 /** @type {import('./$types').Actions} */
 export const actions = {
@@ -85,7 +85,7 @@ export const actions = {
         updated_at: new Date(),
         sms_consent: smsConsent,
         sms_consent_at: smsConsent ? new Date().toISOString() : null,
-        sms_consent_text: smsConsent ? SMS_CONSENT_TEXT : null,
+        sms_consent_text: smsConsent ? SMS_CONSENT_RECORD : null,
         sms_consent_ip: smsConsent ? clientIp : null,
         sms_consent_user_agent: smsConsent
           ? (request.headers.get("user-agent") ?? null)
@@ -94,7 +94,11 @@ export const actions = {
 
     if (insertError) {
       console.error("Error saving contact request", insertError)
-      return fail(500, { errors: { _: "Error saving" } })
+      return fail(500, {
+        errors: {
+          _: "We couldn't save your message. Please email hello@buoy.fish instead.",
+        },
+      })
     }
 
     // Send email to admin

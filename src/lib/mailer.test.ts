@@ -102,6 +102,84 @@ describe("mailer", () => {
     })
   })
 
+  describe("sendAdminEmail", () => {
+    beforeEach(async () => {
+      const { env } = await import("$env/dynamic/private")
+      env.PRIVATE_ADMIN_EMAIL = "admin@example.com"
+      env.PRIVATE_FROM_ADMIN_EMAIL = "site@example.com"
+    })
+
+    it("sends to the admin address and reports success", async () => {
+      mockSend.mockResolvedValueOnce({ data: { id: "e1" }, error: null })
+
+      const result = await mailer.sendAdminEmail({ subject: "Hi", body: "B" })
+
+      expect(result).toEqual({ ok: true })
+      const email = mockSend.mock.calls[0][0]
+      expect(email.to).toEqual(["admin@example.com"])
+      expect(email.from).toEqual("site@example.com")
+    })
+
+    // Production ran for months with no admin email configured and every
+    // contact request silently went nowhere. Unconfigured must be loud.
+    it("reports and logs an error when the admin email is not configured", async () => {
+      const { env } = await import("$env/dynamic/private")
+      env.PRIVATE_ADMIN_EMAIL = ""
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {})
+
+      const result = await mailer.sendAdminEmail({ subject: "Hi", body: "B" })
+
+      expect(result).toEqual({ ok: false, reason: "not_configured" })
+      expect(mockSend).not.toHaveBeenCalled()
+      expect(consoleError).toHaveBeenCalled()
+      consoleError.mockRestore()
+    })
+
+    it("reports and logs an error when the API key is missing", async () => {
+      const { env } = await import("$env/dynamic/private")
+      env.PRIVATE_RESEND_API_KEY = ""
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {})
+
+      const result = await mailer.sendAdminEmail({ subject: "Hi", body: "B" })
+
+      expect(result).toEqual({ ok: false, reason: "not_configured" })
+      expect(mockSend).not.toHaveBeenCalled()
+      consoleError.mockRestore()
+    })
+
+    it("reports a send failure returned by Resend", async () => {
+      mockSend.mockResolvedValueOnce({
+        data: null,
+        error: { name: "validation_error", message: "domain not verified" },
+      })
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {})
+
+      const result = await mailer.sendAdminEmail({ subject: "Hi", body: "B" })
+
+      expect(result).toEqual({ ok: false, reason: "send_failed" })
+      expect(consoleError).toHaveBeenCalled()
+      consoleError.mockRestore()
+    })
+
+    it("reports a send failure when Resend throws", async () => {
+      mockSend.mockRejectedValueOnce(new Error("network down"))
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {})
+
+      const result = await mailer.sendAdminEmail({ subject: "Hi", body: "B" })
+
+      expect(result).toEqual({ ok: false, reason: "send_failed" })
+      consoleError.mockRestore()
+    })
+  })
+
   describe("sendTemplatedEmail", () => {
     it("sends templated email", async () => {
       await mailer.sendTemplatedEmail({

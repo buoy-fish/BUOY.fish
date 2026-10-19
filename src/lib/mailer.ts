@@ -6,18 +6,26 @@ import { createClient, type User } from "@supabase/supabase-js"
 import type { Database } from "../DatabaseDefinitions"
 import handlebars from "handlebars"
 
+export type AdminEmailResult =
+  | { ok: true }
+  | { ok: false; reason: "not_configured" | "send_failed" }
+
 // Sends an email to the admin email address.
-// Does not throw errors, but logs them.
+// Never throws; failures are logged with console.error and returned, so a
+// missing Pages secret shows up in the worker logs instead of vanishing.
 export const sendAdminEmail = async ({
   subject,
   body,
 }: {
   subject: string
   body: string
-}) => {
-  // Check admin email is setup
-  if (!env.PRIVATE_ADMIN_EMAIL) {
-    return
+}): Promise<AdminEmailResult> => {
+  if (!env.PRIVATE_ADMIN_EMAIL || !env.PRIVATE_RESEND_API_KEY) {
+    console.error(
+      "Admin email not sent: PRIVATE_ADMIN_EMAIL and PRIVATE_RESEND_API_KEY must be set as Cloudflare Pages secrets. Subject:",
+      subject,
+    )
+    return { ok: false, reason: "not_configured" }
   }
 
   try {
@@ -30,10 +38,13 @@ export const sendAdminEmail = async ({
     })
 
     if (resp.error) {
-      console.log("Failed to send admin email, error:", resp.error)
+      console.error("Failed to send admin email, error:", resp.error)
+      return { ok: false, reason: "send_failed" }
     }
+    return { ok: true }
   } catch (e) {
-    console.log("Failed to send admin email, error:", e)
+    console.error("Failed to send admin email, error:", e)
+    return { ok: false, reason: "send_failed" }
   }
 }
 
