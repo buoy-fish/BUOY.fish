@@ -43,9 +43,15 @@ jobs:
           [ ${#files[@]} -eq 1 ] || { echo "::error::expected one rollback for $VERSION, found ${#files[@]}"; exit 1; }
           echo "DOWN_FILE=${files[0]}" >> "$GITHUB_ENV"
 
-      - name: Fetch deploy secrets from OpenBao
-        uses: hashicorp/vault-action@v3
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3
         with:
+          version: 2.121.0
+
+      - name: Fetch deploy secrets from OpenBao
+        id: bao
+        uses: hashicorp/vault-action@4c06c5ccf5c0761b6029f56cfb1dcf5565918a3b # v3.4.0
+        with:
+          exportEnv: false
           url: https://bao.buoy.fish
           method: jwt
           path: github-actions
@@ -54,11 +60,9 @@ jobs:
           secrets: |
             secret/data/BUOY.fish/deploy SUPABASE_DB_URL
 
-      - uses: supabase/setup-cli@v1
-        with:
-          version: 2.121.0
-
       - name: Roll back
+        env:
+          SUPABASE_DB_URL: ${{ steps.bao.outputs.SUPABASE_DB_URL }}
         run: |
           echo "Rolling back $VERSION with $DOWN_FILE"
           psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 --single-transaction -f "$DOWN_FILE"

@@ -49,7 +49,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3
         with:
           version: 2.121.0
 
@@ -91,12 +91,19 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3
+        with:
+          version: 2.121.0
+
       # GitHub OIDC -> role BUOY.fish-deploy, read-only on secret/BUOY.fish/*.
       # Values are managed at https://bao.buoy.fish (secret/BUOY.fish/deploy):
-      # rotate there, not in GitHub.
+      # rotate there, not in GitHub. exportEnv: false keeps the DB URL out of
+      # the job env; only the migration step receives it.
       - name: Fetch deploy secrets from OpenBao
-        uses: hashicorp/vault-action@v3
+        id: bao
+        uses: hashicorp/vault-action@4c06c5ccf5c0761b6029f56cfb1dcf5565918a3b # v3.4.0
         with:
+          exportEnv: false
           url: https://bao.buoy.fish
           method: jwt
           path: github-actions
@@ -105,15 +112,13 @@ jobs:
           secrets: |
             secret/data/BUOY.fish/deploy SUPABASE_DB_URL
 
-      - uses: supabase/setup-cli@v1
-        with:
-          version: 2.121.0
-
       # Migrations run BEFORE the new code ships, so each one must be
       # backward-compatible with the code currently live (expand, deploy,
       # then contract in a later PR). Every one has a tested rollback in
       # supabase/rollbacks/; undo with the "Roll back a migration" workflow.
       - name: Apply database migrations
+        env:
+          SUPABASE_DB_URL: ${{ steps.bao.outputs.SUPABASE_DB_URL }}
         run: |
           supabase db push --dry-run --db-url "$SUPABASE_DB_URL"
           supabase db push --db-url "$SUPABASE_DB_URL"
