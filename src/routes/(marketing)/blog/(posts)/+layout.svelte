@@ -75,4 +75,14 @@
   </div>
   <h1>{currentPost.title}</h1>
   {@render children?.()}
+
+  <aside class="not-prose mt-12 pt-8 border-t border-base-300">
+    <h2 class="text-xl font-bold">Losing gear in your fishery?</h2>
+    <p class="mt-2 leading-relaxed">
+      We run pilot projects with fishing cooperatives, NGOs, and researchers.
+      Tell us where you fish, what gear you set, and how the project would be
+      funded, and we'll reply with what a pilot could look like.
+    </p>
+    <a href="/propose" class="btn btn-primary mt-4">Propose a pilot project</a>
+  </aside>
 </article>

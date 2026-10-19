@@ -36,6 +36,19 @@ declare global {
     // interface Platform {}
   }
 
+  // Cloudflare Turnstile's browser API (src/lib/Turnstile.svelte), present
+  // once challenges.cloudflare.com/turnstile/v0/api.js has loaded.
+  interface Window {
+    turnstile?: {
+      render(
+        container: HTMLElement,
+        options: Record<string, unknown>,
+      ): string | undefined
+      reset(widgetId: string): void
+      remove(widgetId: string): void
+    }
+  }
+
   // Add environment variable type
   namespace NodeJS {
     interface ProcessEnv {

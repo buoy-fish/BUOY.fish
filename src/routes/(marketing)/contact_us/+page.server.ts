@@ -1,6 +1,7 @@
 import { fail } from "@sveltejs/kit"
 import { sendAdminEmail } from "$lib/mailer.js"
-import { SMS_CONSENT_RECORD } from "$lib/sms_consent"
+import { getClientIp, smsConsentColumns } from "$lib/sms_consent"
+import { TURNSTILE_FAILED_MESSAGE, verifyTurnstile } from "$lib/turnstile"
 
 /** @type {import('./$types').Actions} */
 export const actions = {
@@ -63,13 +64,13 @@ export const actions = {
       return fail(400, { errors })
     }
 
-    // Auditable record of the SMS opt-in event: when, the exact language
-    // shown, and where the submission came from (TCPA / carrier requirement).
-    let clientIp: string | null = null
-    try {
-      clientIp = request.headers.get("cf-connecting-ip") ?? getClientAddress()
-    } catch {
-      clientIp = null
+    const clientIp = getClientIp(request, getClientAddress)
+    const turnstile = await verifyTurnstile(
+      formData.get("cf-turnstile-response")?.toString(),
+      clientIp,
+    )
+    if (!turnstile.ok) {
+      return fail(403, { errors: { _: TURNSTILE_FAILED_MESSAGE } })
     }
 
     // Save to database
@@ -83,13 +84,7 @@ export const actions = {
         phone,
         message_body: message,
         updated_at: new Date(),
-        sms_consent: smsConsent,
-        sms_consent_at: smsConsent ? new Date().toISOString() : null,
-        sms_consent_text: smsConsent ? SMS_CONSENT_RECORD : null,
-        sms_consent_ip: smsConsent ? clientIp : null,
-        sms_consent_user_agent: smsConsent
-          ? (request.headers.get("user-agent") ?? null)
-          : null,
+        ...smsConsentColumns(smsConsent, request, clientIp),
       })
 
     if (insertError) {
