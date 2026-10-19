@@ -12,7 +12,7 @@ The public-facing marketing website for BUOY.fish — a company that builds GPS 
 
 - **Framework:** SvelteKit 5 + Svelte 5 + TypeScript
 - **Styling:** Tailwind CSS 3.4 + DaisyUI 4.7 (custom theme `saasstartertheme`)
-- **Backend:** Supabase (auth + PostgreSQL), Stripe (payments), Resend (email)
+- **Backend:** none of its own. Contact and pilot leads post to app.buoy.fish (ADR-0039), which stores them and emails hello@
 - **Hosting:** Cloudflare Pages + Workers
 - **Build:** Vite 5, deployed via `deploy/prod.sh` + Wrangler
 
@@ -22,14 +22,11 @@ The public-facing marketing website for BUOY.fish — a company that builds GPS 
 src/
   config.ts              # Site name, URL, description
   routes/
-    (marketing)/         # Public pages: home, pricing, blog, contact, login
+    (marketing)/         # Public pages: home, blog, contact, propose, legal
       +page.svelte       # Homepage — hero video with typewriter animation
       +layout.svelte     # Navbar + footer for marketing pages
-      pricing/           # Pricing page + pricing_plans.ts
       blog/              # Blog listing + posts in (posts)/ subdirectory
       contact_us/        # Contact form; leads post to app.buoy.fish (ADR-0039)
-      login/             # Auth flows (Supabase Auth UI)
-    (admin)/account/     # Authenticated dashboard, billing, settings
 static/
   images/                # Logos (buoy_logo.svg, buoy_logo_dark.png)
   videos/                # Hero video (hero-video-optimized.webm/.mp4)
@@ -55,7 +52,7 @@ npm run test         # Vitest
 
 ## Environment Variables
 
-See `.env.example` — requires Supabase URL/keys, Stripe API key, and optionally Resend for email.
+See `.env.example`: the Turnstile site key, PRIVATE_SITE_LEADS_TOKEN (the app's lead endpoint), and optional Chatwoot vars.
 
 ## Company Context
 

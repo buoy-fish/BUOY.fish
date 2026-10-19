@@ -3,10 +3,6 @@ name: Tests
 on: [push, pull_request]
 
 env:
-  PUBLIC_SUPABASE_URL: "https://fake_test_url.supabase.co"
-  PUBLIC_SUPABASE_ANON_KEY: "fake_anon_key"
-  PRIVATE_SUPABASE_SERVICE_ROLE: "fake_service_role"
-  PRIVATE_STRIPE_API_KEY: "fake_stripe_api_key"
   PUBLIC_SITE_ACCESS: "public"
   # Cloudflare's always-pass Turnstile test site key (public by design).
   PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA"

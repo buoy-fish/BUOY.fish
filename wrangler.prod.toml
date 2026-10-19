@@ -13,6 +13,4 @@ PUBLIC_SITE_ACCESS = "public"
 # or using: npx wrangler pages secret put SECRET_NAME --project-name=buoy-fish-website
 #
 # Required secrets:
-#   - PUBLIC_SUPABASE_URL
-#   - PUBLIC_SUPABASE_ANON_KEY
-#   - PRIVATE_SUPABASE_SERVICE_ROLE
+#   - PRIVATE_SITE_LEADS_TOKEN (bao secret/BUOY.fish/deploy; the forms' token for app.buoy.fish)
