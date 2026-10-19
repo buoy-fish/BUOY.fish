@@ -18,17 +18,18 @@ npm install
 npm run dev
 ```
 
-Before pushing, run `./checks.sh` (spelling, format, lint, type check, tests,
-as CI does). The spell check needs
+Before pushing, run `./checks.sh` (spelling, format, lint, type check, tests).
+CI also runs `npm run build`. The spell check needs
 [misspell](https://github.com/client9/misspell) installed.
 
-`PUBLIC_SITE_ACCESS` must be `public`. Any other value puts the whole site
-behind the template's password page (`src/hooks.server.ts`).
+`PUBLIC_SITE_ACCESS` must be `public`. It is baked in at build time, and any
+other value puts the whole site behind the template's password page
+(`src/hooks.server.ts`).
 
 ## Deploy
 
 Merging to `main` deploys to Cloudflare Pages (`buoy-production-website`) via
-the Test & Deploy workflow (`deploy/prod.sh` is the manual fallback). Runtime
+the Test & Deploy workflow, which also guards the build env. Runtime
 secrets are Pages secrets whose source of truth is OpenBao
 `secret/BUOY.fish/deploy`. The deploy's own Cloudflare token is still a GitHub
 repo secret.

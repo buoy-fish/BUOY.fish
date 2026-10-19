@@ -4,7 +4,7 @@
 
 The public-facing marketing website for BUOY.fish — a company that builds GPS tracking buoys to help fishermen locate their deployed set-gear and prevent ghost gear (lost/abandoned fishing equipment that continues to trap marine life).
 
-**Live staging:** Deployed to Cloudflare Pages
+**Live:** https://buoy.fish (Cloudflare Pages project `buoy-production-website`; merging to `main` deploys it)
 **Production app:** https://app.buoy.fish (separate Elixir/Phoenix app)
 **Old website:** `../buoy-fish/` (Astro-based, being replaced by this site)
 
@@ -14,7 +14,7 @@ The public-facing marketing website for BUOY.fish — a company that builds GPS 
 - **Styling:** Tailwind CSS 3.4 + DaisyUI 4.7 (custom theme `saasstartertheme`)
 - **Backend:** none of its own. Contact and pilot leads post to app.buoy.fish (ADR-0039), which stores them and emails hello@
 - **Hosting:** Cloudflare Pages + Workers
-- **Build:** Vite 5. Merging to `main` deploys via the Test & Deploy workflow; `deploy/prod.sh` is the manual fallback
+- **Build:** Vite 5. Merging to `main` deploys via the Test & Deploy workflow
 
 ## Project Structure
 
@@ -47,7 +47,8 @@ npm run build        # Production build
 npm run check        # Svelte type checking
 npm run lint         # ESLint
 npm run format       # Prettier
-npm run test         # Vitest
+npm run test_run     # Vitest, once
+./checks.sh          # Spelling, format, lint, type check, tests
 ```
 
 ## Environment Variables
