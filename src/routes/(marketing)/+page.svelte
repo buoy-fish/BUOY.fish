@@ -255,16 +255,21 @@
 </svelte:head>
 
 <!-- Hero Video Section -->
-<div class="relative h-screen w-full overflow-hidden">
+<div class="relative h-screen w-full overflow-hidden bg-neutral">
   <!-- Poster image shown while video loads (especially helpful on mobile/slow connections) -->
   <img
     src="/images/hero-poster.jpg"
     alt="BUOY.fish hero"
     class="absolute inset-0 w-full h-full object-cover"
   />
+  <!-- The footage must stay SDR (BT.709). The original iPhone clip was
+       HDR (HLG); on XDR displays it rendered brighter than white text and washed
+       the tagline out. dynamic-range-limit caps any future HDR asset to SDR too
+       (inline because svelte-check's CSS linter doesn't know the property yet). -->
   <video
     bind:this={videoElement}
     class="absolute inset-0 w-full h-full object-cover"
+    style="dynamic-range-limit: standard"
     autoplay
     muted
     loop
@@ -282,7 +287,7 @@
   >
     <p
       bind:this={taglineEl}
-      class="text-white text-4xl font-semibold tracking-wide whitespace-nowrap"
+      class="hero-tagline text-white text-4xl font-semibold tracking-wide whitespace-nowrap"
     >
       Solving lost and abandoned fishing gear.
     </p>
@@ -296,7 +301,7 @@
       : 0}; transition: opacity 1400ms ease 250ms"
   >
     <p
-      class="text-white text-4xl font-semibold tracking-wide whitespace-nowrap"
+      class="hero-tagline text-white text-4xl font-semibold tracking-wide whitespace-nowrap"
     >
       One buoy at a time.
     </p>
@@ -733,6 +738,11 @@
 </section>
 
 <style>
+  .hero-tagline {
+    text-shadow:
+      0 1px 2px rgb(15 23 42 / 0.35),
+      0 2px 18px rgb(15 23 42 / 0.3);
+  }
   .partner-track {
     -ms-overflow-style: none;
     scrollbar-width: none;
