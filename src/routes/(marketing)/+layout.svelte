@@ -56,6 +56,12 @@
             : 'text-primary'}">Demo</a
         >
         <a
+          href="https://map.buoy.fish"
+          class="hover:bg-secondary hover:text-white text-xs font-semibold px-2 py-1.5 rounded-md transition-colors duration-300 {isHome
+            ? 'text-white drop-shadow-lg'
+            : 'text-primary'}">Map</a
+        >
+        <a
           href="https://app.buoy.fish"
           class="hover:bg-secondary hover:text-white text-xs font-semibold px-2 py-1.5 rounded-md transition-colors duration-300 {isHome
             ? 'text-white drop-shadow-lg'
@@ -71,20 +77,28 @@
 
       <div class="hidden sm:block flex-none mr-4">
         <ul
-          class="menu menu-horizontal hidden sm:flex font-extrabold text-xl gap-10"
+          class="menu menu-horizontal hidden sm:flex font-extrabold text-xl gap-2 lg:gap-10"
         >
           <li>
             <a
               href="/blog"
-              class="hover:bg-secondary hover:text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl {isHome
+              class="hover:bg-secondary hover:text-white px-4 lg:px-6 py-3 rounded-lg transition-colors duration-300 text-xl {isHome
                 ? 'text-white drop-shadow-lg'
                 : 'text-primary'}">Blog</a
             >
           </li>
           <li>
             <a
+              href="https://map.buoy.fish"
+              class="hover:bg-secondary hover:text-white px-4 lg:px-6 py-3 rounded-lg transition-colors duration-300 text-xl {isHome
+                ? 'text-white drop-shadow-lg'
+                : 'text-primary'}">Map</a
+            >
+          </li>
+          <li>
+            <a
               href="/contact_us"
-              class="hover:bg-secondary hover:text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl {isHome
+              class="hover:bg-secondary hover:text-white px-4 lg:px-6 py-3 rounded-lg transition-colors duration-300 text-xl {isHome
                 ? 'text-white drop-shadow-lg'
                 : 'text-primary'}">Contact Us</a
             >
@@ -92,7 +106,7 @@
           <li>
             <a
               href="https://app.buoy.fish/demo"
-              class="hover:bg-secondary hover:text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl {isHome
+              class="hover:bg-secondary hover:text-white px-4 lg:px-6 py-3 rounded-lg transition-colors duration-300 text-xl {isHome
                 ? 'text-white drop-shadow-lg'
                 : 'text-primary'}">Live Demo</a
             >
@@ -100,7 +114,7 @@
           <li>
             <a
               href="https://app.buoy.fish"
-              class="hover:bg-secondary hover:text-white px-6 py-3 rounded-lg transition-colors duration-300 text-xl {isHome
+              class="hover:bg-secondary hover:text-white px-4 lg:px-6 py-3 rounded-lg transition-colors duration-300 text-xl {isHome
                 ? 'text-white drop-shadow-lg'
                 : 'text-primary'}">App</a
             >
@@ -120,6 +134,7 @@
         <span class="footer-title opacity-80">Explore</span>
         <a class="link link-hover mb-1" href="/">Home</a>
         <a class="link link-hover my-1" href="/blog">Blog</a>
+        <a class="link link-hover my-1" href="https://map.buoy.fish">Map</a>
         <a class="link link-hover my-1" href="/contact_us">Contact Us</a>
       </nav>
       <aside>
