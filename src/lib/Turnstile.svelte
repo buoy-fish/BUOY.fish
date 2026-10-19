@@ -31,8 +31,8 @@
   import { PUBLIC_TURNSTILE_SITE_KEY } from "$env/static/public"
 
   // Renders the Cloudflare Turnstile widget inside a <form>. The widget adds a
-  // hidden `cf-turnstile-response` input that the server action verifies with
-  // verifyTurnstile() ($lib/turnstile.ts).
+  // hidden `cf-turnstile-response` input; the server action forwards it to
+  // app.buoy.fish, which verifies it (ADR-0039).
   let { action }: { action: string } = $props()
 
   let container: HTMLDivElement

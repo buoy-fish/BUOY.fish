@@ -1,45 +1,44 @@
 vi.mock("$env/dynamic/private")
-vi.mock("$lib/mailer.js", () => ({
-  sendAdminEmail: vi.fn().mockResolvedValue({ ok: true }),
-}))
 
 import { env } from "$env/dynamic/private"
-import { sendAdminEmail } from "$lib/mailer.js"
+import {
+  stubAppDown,
+  stubAppLeads,
+  TEST_SITE_LEADS_TOKEN,
+} from "$lib/app_leads_test_helpers"
+import { SMS_CONSENT_RECORD } from "$lib/sms_consent"
 import { TURNSTILE_FAILED_MESSAGE } from "$lib/turnstile"
-import { stubSiteverify } from "$lib/turnstile_test_helpers"
 import { actions } from "./+page.server"
 
 function submit(fields: Record<string, string>) {
   const body = new FormData()
   for (const [k, v] of Object.entries(fields)) body.set(k, v)
-  const insert = vi.fn().mockResolvedValue({ error: null })
-  const from = vi.fn(() => ({ insert }))
   const event = {
     request: new Request("http://localhost/propose", {
       method: "POST",
       body,
-      headers: { "user-agent": "test-agent" },
+      headers: {
+        "user-agent": "test-agent",
+        "cf-connecting-ip": "203.0.113.7",
+      },
     }),
-    getClientAddress: () => "1.2.3.4",
-    locals: { supabaseServiceRole: { from } },
+    getClientAddress: () => "10.0.0.1",
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return { result: actions.submitProposal(event as any), insert, from }
+  return actions.submitProposal(event as any)
 }
 
 describe("submitProposal", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.unstubAllGlobals()
-    env.PRIVATE_TURNSTILE_SECRET_KEY = "1x0000000000000000000000000000000AA"
+    env.PRIVATE_SITE_LEADS_TOKEN = TEST_SITE_LEADS_TOKEN
   })
 
   it("requires name, email and the problem, and saves nothing", async () => {
-    const siteverify = stubSiteverify({ success: true })
+    const app = stubAppLeads()
 
-    const { result, insert } = submit({ "cf-turnstile-response": "token" })
-
-    expect(await result).toMatchObject({
+    expect(await submit({ "cf-turnstile-response": "token" })).toMatchObject({
       status: 400,
       data: {
         errors: {
@@ -50,14 +49,13 @@ describe("submitProposal", () => {
         },
       },
     })
-    expect(insert).not.toHaveBeenCalled()
-    expect(siteverify.forms).toEqual([])
+    expect(app.leads).toEqual([])
   })
 
   it("rejects malformed answers field by field", async () => {
-    stubSiteverify({ success: true })
+    const app = stubAppLeads()
 
-    const { result, insert } = submit({
+    const result = submit({
       ...validProposal,
       email: "not-an-email",
       problem: "x".repeat(4001),
@@ -80,16 +78,14 @@ describe("submitProposal", () => {
         },
       },
     })
-    expect(insert).not.toHaveBeenCalled()
+    expect(app.leads).toEqual([])
   })
 
-  it("shows a fallback message when the proposal can't be saved", async () => {
-    stubSiteverify({ success: true })
+  it("shows a fallback message when the app is down", async () => {
+    stubAppDown()
     vi.spyOn(console, "error").mockImplementation(() => {})
-    const { result, insert } = submit(validProposal)
-    insert.mockResolvedValueOnce({ error: { message: "db down" } })
 
-    expect(await result).toMatchObject({
+    expect(await submit(validProposal)).toMatchObject({
       status: 500,
       data: {
         errors: {
@@ -97,13 +93,12 @@ describe("submitProposal", () => {
         },
       },
     })
-    expect(sendAdminEmail).not.toHaveBeenCalled()
   })
 
-  it("saves a proposal with core fields in columns and the rest in details", async () => {
-    stubSiteverify({ success: true, "error-codes": [] })
+  it("sends a pilot lead with the core fields and the rest as shown in details", async () => {
+    const app = stubAppLeads()
 
-    const { result, insert, from } = submit({
+    const result = submit({
       ...validProposal,
       organization: "Pescadores Unidos",
       role: "Cooperative manager",
@@ -116,88 +111,85 @@ describe("submitProposal", () => {
     })
 
     expect(await result).toBeUndefined()
-    expect(from).toHaveBeenCalledWith("contact_requests")
-    expect(insert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        kind: "proposal",
+    expect(app.leads).toEqual([
+      {
+        kind: "pilot",
         first_name: "Ana",
         last_name: "Lopez",
         email: "ana@example.org",
-        company_name: "Pescadores Unidos",
+        organization: "Pescadores Unidos",
         phone: "",
-        message_body: "Longlines get cut by trawlers and we lose them.",
+        message: "Longlines get cut by trawlers and we lose them.",
         sms_consent: false,
+        // Labels, not option codes: the record and the hello@ email show
+        // what the visitor picked, in their words.
         details: {
           role: "Cooperative manager",
           region: "Gulf of Nicoya, Costa Rica",
           gear_type: "Bottom longlines",
           fleet_size: "14 pangas",
-          funding: "applying",
-          timeline: "3_6_months",
+          funding: "Applying for a grant or program",
+          timeline: "In 3 to 6 months",
           referral: "Your blog",
         },
-      }),
-    )
+        turnstile_token: "token",
+        visitor_ip: "203.0.113.7",
+        visitor_user_agent: "test-agent",
+      },
+    ])
   })
 
-  it("does not save or email a proposal whose Turnstile token is refused", async () => {
-    stubSiteverify({
-      success: false,
-      "error-codes": ["invalid-input-response"],
-    })
+  it("sends an SMS opt-in with the exact consent record shown", async () => {
+    const app = stubAppLeads()
 
-    const { result, insert } = submit(validProposal)
-
-    expect(await result).toMatchObject({
-      status: 403,
-      data: { errors: { _: TURNSTILE_FAILED_MESSAGE } },
-    })
-    expect(insert).not.toHaveBeenCalled()
-    expect(sendAdminEmail).not.toHaveBeenCalled()
-  })
-
-  it("rejects every proposal when the Turnstile secret is missing", async () => {
-    env.PRIVATE_TURNSTILE_SECRET_KEY = ""
-    stubSiteverify({ success: true })
-    vi.spyOn(console, "error").mockImplementation(() => {})
-
-    const { result, insert } = submit(validProposal)
-
-    expect(await result).toMatchObject({
-      status: 403,
-      data: { errors: { _: TURNSTILE_FAILED_MESSAGE } },
-    })
-    expect(insert).not.toHaveBeenCalled()
-  })
-
-  it("emails the team a pilot proposal with every answer", async () => {
-    stubSiteverify({ success: true, "error-codes": [] })
-
-    const { result } = submit({
+    await submit({
       ...validProposal,
-      region: "Gulf of Nicoya, Costa Rica",
-      funding: "applying",
-      timeline: "3_6_months",
+      phone: "+506 8888 0000",
+      sms_consent: "on",
     })
-    await result
 
-    expect(sendAdminEmail).toHaveBeenCalledOnce()
-    const { subject, body } = vi.mocked(sendAdminEmail).mock.calls[0][0]
-    expect(subject).toBe("New pilot proposal")
-    expect(body).toContain("ana@example.org")
-    expect(body).toContain("Longlines get cut by trawlers and we lose them.")
-    expect(body).toContain("Gulf of Nicoya, Costa Rica")
-    expect(body).toContain("Applying for a grant or program")
-    expect(body).toContain("In 3 to 6 months")
+    expect(app.leads[0]).toMatchObject({
+      sms_consent: true,
+      sms_consent_text: SMS_CONSENT_RECORD,
+    })
   })
 
-  it("stores optional details left blank as null", async () => {
-    stubSiteverify({ success: true, "error-codes": [] })
+  it("shows the Turnstile message when the app refuses the token", async () => {
+    stubAppLeads({ error: "turnstile_failed" }, 403)
 
-    const { result, insert } = submit(validProposal)
+    expect(await submit(validProposal)).toMatchObject({
+      status: 403,
+      data: { errors: { _: TURNSTILE_FAILED_MESSAGE } },
+    })
+  })
 
-    expect(await result).toBeUndefined()
-    expect(insert.mock.calls[0][0].details).toEqual({
+  it("puts the app's errors on the pilot form's own fields", async () => {
+    stubAppLeads(
+      {
+        errors: {
+          message: ["should be at most 4000 character(s)"],
+          organization: ["is invalid"],
+        },
+      },
+      422,
+    )
+
+    expect(await submit(validProposal)).toMatchObject({
+      status: 400,
+      data: {
+        errors: {
+          problem: "Should be at most 4000 character(s)",
+          organization: "Is invalid",
+        },
+      },
+    })
+  })
+
+  it("sends optional answers left blank as null", async () => {
+    const app = stubAppLeads()
+
+    expect(await submit(validProposal)).toBeUndefined()
+    expect(app.leads[0].details).toEqual({
       role: null,
       region: null,
       gear_type: null,

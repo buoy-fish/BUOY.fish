@@ -78,8 +78,8 @@ jobs:
           PRIVATE_STRIPE_API_KEY: ${{ secrets.PRIVATE_STRIPE_API_KEY }}
           PUBLIC_SITE_ACCESS: "public"
           # Turnstile site key (public, baked in at build time via
-          # $env/static/public). A repo variable, not a secret. Its server-side
-          # pair PRIVATE_TURNSTILE_SECRET_KEY is a Pages secret. Without a real
+          # $env/static/public). A repo variable, not a secret. app.buoy.fish
+          # holds the secret and verifies tokens (ADR-0039). Without a real
           # key the contact and proposal forms reject every submission, so
           # refuse to build rather than ship broken forms.
           PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.PUBLIC_TURNSTILE_SITE_KEY }}

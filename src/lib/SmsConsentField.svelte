@@ -5,7 +5,7 @@
 <!-- SMS consent (TCPA / toll-free verification): optional, never
      pre-checked, and never required to submit. The label and the
      Details text come from $lib/sms_consent, which the server stores
-     with each opt-in (smsConsentColumns). -->
+     with each opt-in (sent to app.buoy.fish as sms_consent_text). -->
 <div class="flex flex-row items-start gap-3 mt-1 mb-4">
   <input
     id="sms_consent"

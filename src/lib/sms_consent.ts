@@ -23,8 +23,8 @@ export const SMS_CONSENT_LABEL: string =
 // What the server stores with each consent event: exactly what the form showed.
 export const SMS_CONSENT_RECORD: string = `${SMS_CONSENT_LABEL}\n\n${SMS_CONSENT_TEXT}`
 
-// The submitting client's IP, for the consent record (and Turnstile's
-// `remoteip`). Cloudflare's header first; null if the platform can't tell us.
+// The submitting client's IP, forwarded to the app for the consent record and
+// Turnstile's `remoteip`. Cloudflare's header first; null if the platform can't tell us.
 export const getClientIp = (
   request: Request,
   getClientAddress: () => string,
@@ -35,20 +35,3 @@ export const getClientIp = (
     return null
   }
 }
-
-// The contact_requests columns that make an SMS opt-in auditable: when, the
-// exact language shown, and where the submission came from (TCPA / carrier
-// requirement). All null when the box was left unchecked.
-export const smsConsentColumns = (
-  smsConsent: boolean,
-  request: Request,
-  clientIp: string | null,
-) => ({
-  sms_consent: smsConsent,
-  sms_consent_at: smsConsent ? new Date().toISOString() : null,
-  sms_consent_text: smsConsent ? SMS_CONSENT_RECORD : null,
-  sms_consent_ip: smsConsent ? clientIp : null,
-  sms_consent_user_agent: smsConsent
-    ? (request.headers.get("user-agent") ?? null)
-    : null,
-})

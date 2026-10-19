@@ -12,11 +12,9 @@ export interface Database {
       contact_requests: {
         Row: {
           company_name: string | null
-          details: Json | null
           email: string | null
           first_name: string | null
           id: string
-          kind: "contact" | "proposal"
           last_name: string | null
           message_body: string | null
           phone: string | null
@@ -29,11 +27,9 @@ export interface Database {
         }
         Insert: {
           company_name?: string | null
-          details?: Json | null
           email?: string | null
           first_name?: string | null
           id?: string
-          kind?: "contact" | "proposal"
           last_name?: string | null
           message_body?: string | null
           phone?: string | null
@@ -46,11 +42,9 @@ export interface Database {
         }
         Update: {
           company_name?: string | null
-          details?: Json | null
           email?: string | null
           first_name?: string | null
           id?: string
-          kind?: "contact" | "proposal"
           last_name?: string | null
           message_body?: string | null
           phone?: string | null
