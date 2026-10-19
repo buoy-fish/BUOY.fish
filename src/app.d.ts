@@ -1,6 +1,3 @@
-import type { SupabaseClient, Session, AMREntry } from "@supabase/supabase-js"
-import { Database } from "./DatabaseDefinitions"
-
 /// <reference types="vite/client" />
 /// <reference types="@sveltejs/kit" />
 
@@ -13,25 +10,9 @@ interface ImportMetaEnv {
 // for information about these interfaces
 declare global {
   namespace App {
-    interface Locals {
-      supabase: SupabaseClient
-      supabaseServiceRole: SupabaseClient
-      safeGetSession: () => Promise<{
-        session: Session | null
-        user: User | null
-        amr: AMREntry[] | null
-      }>
-      session: Session | null
-      user: User | null
-    }
-    interface PageData {
-      session: Session | null
-    }
+    // interface Locals {}
+    // interface PageData {}
     interface Platform {}
-    interface Supabase {
-      Database: Database
-      SchemaName: "public"
-    }
     // interface Error {}
     // interface Platform {}
   }
