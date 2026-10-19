@@ -25,9 +25,9 @@ const blogPosts: BlogPost[] = [
     title:
       "Costa Rica — Bringing Connected Gear Tracking to the Gulf of Nicoya",
     description:
-      "BUOY.fish plans its first Central American deployment, targeting 90% LoRaWAN coverage of the Gulf of Nicoya for artisanal fisheries.",
+      "BUOY.fish is live in the Gulf of Nicoya: five gateways, 28 smart buoys and 14 vessel trackers in its first Central American deployment.",
     link: "/blog/costa-rica-gulf-of-nicoya",
-    date: "2026-02-20",
+    date: "2026-10-18",
   },
   {
     title: "Punta Eugenia & Isla Natividad — Expanding in Baja California",

@@ -6,7 +6,7 @@
     WebsiteDescription,
   } from "./../../config"
   import { onMount, onDestroy } from "svelte"
-  import { deployments, stageMeta } from "$lib/data/deployments"
+  import { deployments, mapLinks, stageMeta } from "$lib/data/deployments"
 
   let videoElement: HTMLVideoElement
   let trackEl: HTMLDivElement
@@ -602,18 +602,31 @@
     </p>
     <div class="grid md:grid-cols-2 gap-8">
       {#each deployments as d (d.slug)}
-        <a
-          href={`/blog/${d.slug}`}
-          class="card bg-base-200 shadow-md hover:shadow-lg transition-shadow"
+        {@const map = mapLinks(d)}
+        <!-- The title link stretches over the whole card (after:inset-0); the
+             map link sits above it (z-10) so the two never nest. -->
+        <div
+          class="card relative bg-base-200 shadow-md hover:shadow-lg transition-shadow"
         >
           <div class="card-body">
             <div class="badge {stageMeta[d.stage].badgeClass} mb-2">
               {stageMeta[d.stage].label}
             </div>
-            <h3 class="card-title">{d.title}</h3>
+            <h3 class="card-title">
+              <a href={`/blog/${d.slug}`} class="after:absolute after:inset-0"
+                >{d.title}</a
+              >
+            </h3>
             <p class="text-base-content/70">{d.blurb}</p>
+            {#if map}
+              <a
+                href={map.timeline ?? map.coverage}
+                class="link link-primary relative z-10 mt-2 w-fit text-sm font-semibold"
+                >See it on the map</a
+              >
+            {/if}
           </div>
-        </a>
+        </div>
       {/each}
     </div>
   </div>
