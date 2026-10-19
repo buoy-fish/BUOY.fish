@@ -27,7 +27,7 @@ src/
       +layout.svelte     # Navbar + footer for marketing pages
       pricing/           # Pricing page + pricing_plans.ts
       blog/              # Blog listing + posts in (posts)/ subdirectory
-      contact_us/        # Contact form (Supabase contact_requests table)
+      contact_us/        # Contact form; leads post to app.buoy.fish (ADR-0039)
       login/             # Auth flows (Supabase Auth UI)
     (admin)/account/     # Authenticated dashboard, billing, settings
 static/

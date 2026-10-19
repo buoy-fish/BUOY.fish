@@ -22,3 +22,16 @@ export const SMS_CONSENT_LABEL: string =
 
 // What the server stores with each consent event: exactly what the form showed.
 export const SMS_CONSENT_RECORD: string = `${SMS_CONSENT_LABEL}\n\n${SMS_CONSENT_TEXT}`
+
+// The submitting client's IP, forwarded to the app for the consent record and
+// Turnstile's `remoteip`. Cloudflare's header first; null if the platform can't tell us.
+export const getClientIp = (
+  request: Request,
+  getClientAddress: () => string,
+): string | null => {
+  try {
+    return request.headers.get("cf-connecting-ip") ?? getClientAddress()
+  } catch {
+    return null
+  }
+}

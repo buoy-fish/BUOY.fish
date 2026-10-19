@@ -1,14 +1,10 @@
 import { fail } from "@sveltejs/kit"
-import { sendAdminEmail } from "$lib/mailer.js"
-import { SMS_CONSENT_RECORD } from "$lib/sms_consent"
+import { leadFailure, submitLead } from "$lib/app_leads"
+import { getClientIp, SMS_CONSENT_RECORD } from "$lib/sms_consent"
 
 /** @type {import('./$types').Actions} */
 export const actions = {
-  submitContactUs: async ({
-    request,
-    getClientAddress,
-    locals: { supabaseServiceRole },
-  }) => {
+  submitContactUs: async ({ request, getClientAddress }) => {
     const formData = await request.formData()
     const errors: { [fieldName: string]: string } = {}
 
@@ -63,48 +59,34 @@ export const actions = {
       return fail(400, { errors })
     }
 
-    // Auditable record of the SMS opt-in event: when, the exact language
-    // shown, and where the submission came from (TCPA / carrier requirement).
-    let clientIp: string | null = null
-    try {
-      clientIp = request.headers.get("cf-connecting-ip") ?? getClientAddress()
-    } catch {
-      clientIp = null
-    }
-
-    // Save to database
-    const { error: insertError } = await supabaseServiceRole
-      .from("contact_requests")
-      .insert({
-        first_name: firstName,
-        last_name: lastName,
-        email,
-        company_name: company,
-        phone,
-        message_body: message,
-        updated_at: new Date(),
-        sms_consent: smsConsent,
-        sms_consent_at: smsConsent ? new Date().toISOString() : null,
-        sms_consent_text: smsConsent ? SMS_CONSENT_RECORD : null,
-        sms_consent_ip: smsConsent ? clientIp : null,
-        sms_consent_user_agent: smsConsent
-          ? (request.headers.get("user-agent") ?? null)
-          : null,
-      })
-
-    if (insertError) {
-      console.error("Error saving contact request", insertError)
-      return fail(500, {
-        errors: {
-          _: "We couldn't save your message. Please email hello@buoy.fish instead.",
-        },
-      })
-    }
-
-    // Send email to admin
-    await sendAdminEmail({
-      subject: "New contact request",
-      body: `New contact request from ${firstName} ${lastName}.\n\nEmail: ${email}\n\nPhone: ${phone}\n\nSMS consent: ${smsConsent ? "YES" : "no"}\n\nCompany: ${company}\n\nMessage: ${message}`,
+    const result = await submitLead({
+      kind: "contact",
+      first_name: firstName,
+      last_name: lastName,
+      email,
+      organization: company,
+      phone,
+      message,
+      sms_consent: smsConsent,
+      ...(smsConsent && { sms_consent_text: SMS_CONSENT_RECORD }),
+      turnstile_token: formData.get("cf-turnstile-response")?.toString() ?? "",
+      visitor_ip: getClientIp(request, getClientAddress),
+      visitor_user_agent: request.headers.get("user-agent"),
     })
+
+    if (!result.ok) {
+      return leadFailure(
+        result,
+        {
+          first_name: "first_name",
+          last_name: "last_name",
+          email: "email",
+          organization: "company",
+          phone: "phone",
+          message: "message",
+        },
+        "We couldn't save your message. Please email hello@buoy.fish instead.",
+      )
+    }
   },
 }
