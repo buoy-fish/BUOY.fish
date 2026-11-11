@@ -7,9 +7,29 @@
   } from "./../../config"
   import { onMount, onDestroy } from "svelte"
   import { deployments, mapLinks, stageMeta } from "$lib/data/deployments"
+  import { nextCarouselLeft } from "$lib/carousel"
 
   let videoElement: HTMLVideoElement
   let trackEl: HTMLDivElement
+
+  // Partner carousel auto-rotation: pauses on hover/focus, stops for good once
+  // the visitor scrolls it themselves, and never runs under reduced motion.
+  const ROTATE_MS = 3000
+  let partnersHovered = $state(false)
+  let partnersTouched = $state(false)
+
+  $effect(() => {
+    if (partnersHovered || partnersTouched) return
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    const id = setInterval(() => {
+      if (!trackEl || document.hidden) return
+      const card = trackEl.firstElementChild as HTMLElement | null
+      const gap = parseFloat(getComputedStyle(trackEl).columnGap) || 0
+      const next = nextCarouselLeft(trackEl, (card?.offsetWidth ?? 0) + gap)
+      if (next !== null) trackEl.scrollTo({ left: next, behavior: "smooth" })
+    }, ROTATE_MS)
+    return () => clearInterval(id)
+  })
 
   const partners = [
     {
@@ -642,7 +662,18 @@
       Working with leading organizations to improve the lives of fishermen and
       protect the health of our oceans.
     </p>
-    <div class="relative">
+    <div
+      class="relative"
+      role="region"
+      aria-label="Partners"
+      onmouseenter={() => (partnersHovered = true)}
+      onmouseleave={() => (partnersHovered = false)}
+      onfocusin={() => (partnersHovered = true)}
+      onfocusout={() => (partnersHovered = false)}
+      onpointerdown={() => (partnersTouched = true)}
+      ontouchstart={() => (partnersTouched = true)}
+      onwheel={() => (partnersTouched = true)}
+    >
       <!-- Scroll track -->
       <div
         bind:this={trackEl}
