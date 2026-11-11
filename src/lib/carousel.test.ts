@@ -1,28 +1,43 @@
 import { describe, expect, it } from "vitest"
-import { nextCarouselLeft } from "./carousel"
+import { nextStop, wrapScroll } from "./carousel"
 
-// A 600px-wide viewport over a 1400px-wide track: max scrollLeft is 800.
-const track = { clientWidth: 600, scrollWidth: 1400 }
+// One set of logos is 1392px wide; the home range is the second copy,
+// [1392, 2784), so there is always an identical copy on either side.
+const SET = 1392
 
-describe("nextCarouselLeft", () => {
-  it("advances one step from the start", () => {
-    expect(nextCarouselLeft({ ...track, scrollLeft: 0 }, 230)).toBe(230)
+describe("wrapScroll", () => {
+  it("leaves a position inside the home copy alone", () => {
+    expect(wrapScroll(1500, SET)).toBe(1500)
   })
 
-  it("wraps to the start once the track is scrolled to the end", () => {
-    expect(nextCarouselLeft({ ...track, scrollLeft: 800 }, 230)).toBe(0)
+  it("moves a position past the home copy back by one set", () => {
+    expect(wrapScroll(2784 + 232, SET)).toBe(1392 + 232)
   })
 
-  it("treats sub-pixel rounding at the end as the end", () => {
-    expect(nextCarouselLeft({ ...track, scrollLeft: 799.5 }, 230)).toBe(0)
+  it("moves a position before the home copy forward by one set", () => {
+    expect(wrapScroll(1392 - 232, SET)).toBe(2784 - 232)
   })
 
-  it("returns null when everything fits and there is nothing to rotate", () => {
-    expect(
-      nextCarouselLeft(
-        { scrollLeft: 0, clientWidth: 1400, scrollWidth: 1400 },
-        230,
-      ),
-    ).toBeNull()
+  it("wraps positions several sets away, as a long drag produces", () => {
+    expect(wrapScroll(-100, SET)).toBe(2784 - 100)
+    expect(wrapScroll(5 * SET + 10, SET)).toBe(SET + 10)
+  })
+
+  it("does nothing before the track has been measured", () => {
+    expect(wrapScroll(300, 0)).toBe(300)
+  })
+})
+
+describe("nextStop", () => {
+  const STEP = 232
+
+  it("advances one logo from an aligned position", () => {
+    expect(nextStop(1392, STEP, 1)).toBe(1624)
+    expect(nextStop(1392, STEP, -1)).toBe(1160)
+  })
+
+  it("lands back on a logo boundary after a drag left it between two", () => {
+    expect(nextStop(1676, STEP, 1)).toBe(1856)
+    expect(nextStop(1676, STEP, -1)).toBe(1392)
   })
 })

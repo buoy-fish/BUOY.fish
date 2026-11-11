@@ -7,26 +7,76 @@
   } from "./../../config"
   import { onMount, onDestroy } from "svelte"
   import { deployments, mapLinks, stageMeta } from "$lib/data/deployments"
-  import { nextCarouselLeft } from "$lib/carousel"
+  import { nextStop, wrapScroll } from "$lib/carousel"
 
   let videoElement: HTMLVideoElement
   let trackEl: HTMLDivElement
 
-  // Partner carousel auto-rotation: pauses on hover/focus, stops for good once
-  // the visitor scrolls it themselves, and never runs under reduced motion.
+  // Partners carousel: the logos render COPIES times and rotate one logo every
+  // ROTATE_MS forever, wrapping invisibly (see $lib/carousel). Hover, focus,
+  // drag, touch and the arrows pause it; it resumes RESUME_MS after the visitor
+  // lets go. It never auto-rotates under prefers-reduced-motion.
+  // Ceiling: 4 copies cover a track up to ~2 sets minus one logo wide (~2500px
+  // with six logos); a wider track stutters once per loop. If that ever
+  // matters, derive the copy count from the track width.
+  const COPIES = 4
+  const copies = Array.from({ length: COPIES }, (_, i) => i)
   const ROTATE_MS = 3000
-  let partnersHovered = $state(false)
-  let partnersTouched = $state(false)
+  const RESUME_MS = 4000
+  let hovering = false
+  let dragging = false
+  let resumeAt = 0
+  let dragStartX = 0
+  let dragStartLeft = 0
+
+  function logoAt(i: number) {
+    return trackEl.children[i] as HTMLElement
+  }
+  // Distance from a logo to the same logo in the next copy.
+  function setWidth() {
+    return logoAt(partners.length).offsetLeft - logoAt(0).offsetLeft
+  }
+
+  function rotate(direction: 1 | -1) {
+    const from = wrapScroll(trackEl.scrollLeft, setWidth())
+    const step = logoAt(1).offsetLeft - logoAt(0).offsetLeft
+    trackEl.scrollLeft = from
+    trackEl.scrollTo({
+      left: nextStop(from, step, direction),
+      behavior: "smooth",
+    })
+  }
+
+  function holdRotation() {
+    resumeAt = Date.now() + RESUME_MS
+  }
+
+  // Mouse drag; touch devices use native swipe scrolling.
+  function dragStart(e: PointerEvent) {
+    if (e.pointerType !== "mouse" || e.button !== 0) return
+    dragging = true
+    dragStartX = e.clientX
+    dragStartLeft = trackEl.scrollLeft
+    trackEl.setPointerCapture(e.pointerId)
+  }
+  function dragMove(e: PointerEvent) {
+    if (!dragging) return
+    const left = dragStartLeft - (e.clientX - dragStartX)
+    trackEl.scrollLeft = wrapScroll(left, setWidth())
+  }
+  function dragEnd() {
+    if (!dragging) return
+    dragging = false
+    holdRotation()
+  }
 
   $effect(() => {
-    if (partnersHovered || partnersTouched) return
+    trackEl.scrollLeft = setWidth()
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
     const id = setInterval(() => {
-      if (!trackEl || document.hidden) return
-      const card = trackEl.firstElementChild as HTMLElement | null
-      const gap = parseFloat(getComputedStyle(trackEl).columnGap) || 0
-      const next = nextCarouselLeft(trackEl, (card?.offsetWidth ?? 0) + gap)
-      if (next !== null) trackEl.scrollTo({ left: next, behavior: "smooth" })
+      if (hovering || dragging || document.hidden) return
+      if (Date.now() < resumeAt) return
+      rotate(1)
     }, ROTATE_MS)
     return () => clearInterval(id)
   })
@@ -666,44 +716,54 @@
       class="relative"
       role="region"
       aria-label="Partners"
-      onmouseenter={() => (partnersHovered = true)}
-      onmouseleave={() => (partnersHovered = false)}
-      onfocusin={() => (partnersHovered = true)}
-      onfocusout={() => (partnersHovered = false)}
-      onpointerdown={() => (partnersTouched = true)}
-      ontouchstart={() => (partnersTouched = true)}
-      onwheel={() => (partnersTouched = true)}
+      onpointerenter={(e) => (hovering = e.pointerType === "mouse")}
+      onpointerleave={() => (hovering = false)}
+      onfocusin={() => (hovering = true)}
+      onfocusout={() => (hovering = false)}
+      ontouchstart={holdRotation}
+      ontouchend={holdRotation}
     >
-      <!-- Scroll track -->
+      <!-- Scroll track: the logos repeat COPIES times so it can loop forever -->
       <div
         bind:this={trackEl}
-        class="partner-track flex gap-6 overflow-x-auto px-8 py-4"
+        class="partner-track flex gap-6 overflow-x-auto px-8 py-4 select-none"
+        onpointerdown={dragStart}
+        onpointermove={dragMove}
+        onpointerup={dragEnd}
+        onpointercancel={dragEnd}
       >
-        {#each partners as p}
-          <div
-            class="group relative flex-shrink-0 w-52 h-36 flex items-center justify-center p-6 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-default {p.darkBg
-              ? 'bg-base-100 group-hover:bg-[#1a3a5c]'
-              : 'bg-base-100'}"
-          >
-            <img
-              src={p.logo}
-              alt={p.alt}
-              class="h-16 md:h-20 object-contain transition-all duration-300 {p.invert
-                ? 'invert grayscale group-hover:invert-0 group-hover:grayscale-0'
-                : 'grayscale group-hover:grayscale-0'}"
-            />
+        {#each copies as copy}
+          {#each partners as p}
             <div
-              class="absolute inset-0 flex items-center justify-center bg-primary/95 text-primary-content rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4"
+              aria-hidden={copy > 0 ? "true" : undefined}
+              class="group relative flex-shrink-0 w-52 h-36 flex items-center justify-center p-6 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-default {p.darkBg
+                ? 'bg-base-100 group-hover:bg-[#1a3a5c]'
+                : 'bg-base-100'}"
             >
-              <p class="text-sm text-center font-medium">{p.description}</p>
+              <img
+                src={p.logo}
+                draggable="false"
+                alt={p.alt}
+                class="h-16 md:h-20 object-contain transition-all duration-300 {p.invert
+                  ? 'invert grayscale group-hover:invert-0 group-hover:grayscale-0'
+                  : 'grayscale group-hover:grayscale-0'}"
+              />
+              <div
+                class="absolute inset-0 flex items-center justify-center bg-primary/95 text-primary-content rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4"
+              >
+                <p class="text-sm text-center font-medium">{p.description}</p>
+              </div>
             </div>
-          </div>
+          {/each}
         {/each}
       </div>
       <!-- Left/right scroll buttons -->
       <button
         class="absolute left-1 top-1/2 -translate-y-1/2 z-10 btn btn-circle btn-sm bg-base-100/90 border-none shadow-md hover:bg-base-100"
-        onclick={() => trackEl.scrollBy({ left: -260, behavior: "smooth" })}
+        onclick={() => {
+          holdRotation()
+          rotate(-1)
+        }}
         aria-label="Scroll partners left"
       >
         <svg
@@ -721,7 +781,10 @@
       </button>
       <button
         class="absolute right-1 top-1/2 -translate-y-1/2 z-10 btn btn-circle btn-sm bg-base-100/90 border-none shadow-md hover:bg-base-100"
-        onclick={() => trackEl.scrollBy({ left: 260, behavior: "smooth" })}
+        onclick={() => {
+          holdRotation()
+          rotate(1)
+        }}
         aria-label="Scroll partners right"
       >
         <svg
@@ -790,17 +853,13 @@
   .partner-track {
     -ms-overflow-style: none;
     scrollbar-width: none;
-    scroll-snap-type: x mandatory;
-    justify-content: center;
+    cursor: grab;
+  }
+  .partner-track:active {
+    cursor: grabbing;
   }
   .partner-track::-webkit-scrollbar {
     display: none;
-  }
-  /* When content overflows, left-align so scroll works naturally */
-  @media (max-width: 1400px) {
-    .partner-track {
-      justify-content: flex-start;
-    }
   }
 
   .hud-panel {
