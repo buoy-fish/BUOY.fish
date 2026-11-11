@@ -12,17 +12,17 @@
   let videoElement: HTMLVideoElement
   let trackEl: HTMLDivElement
 
-  // Partners carousel: the logos render COPIES times and rotate one logo every
-  // ROTATE_MS forever, wrapping invisibly (see $lib/carousel). Hover, focus,
+  // Partners carousel: the logos render COPIES times and drift left
+  // continuously forever, wrapping invisibly (see $lib/carousel). Hover, focus,
   // drag, touch and the arrows pause it; it resumes RESUME_MS after the visitor
-  // lets go. It never auto-rotates under prefers-reduced-motion.
-  // Ceiling: 4 copies cover a track up to ~2 sets minus one logo wide (~2500px
-  // with six logos); a wider track stutters once per loop. If that ever
+  // lets go. It never moves on its own under prefers-reduced-motion.
+  // Ceiling: 4 copies cover a track up to ~2 sets wide (~2780px with six
+  // logos); a wider track shows a gap at the end of each loop. If that ever
   // matters, derive the copy count from the track width.
   const COPIES = 4
   const copies = Array.from({ length: COPIES }, (_, i) => i)
-  const ROTATE_MS = 3000
-  const RESUME_MS = 4000
+  const DRIFT_PX_PER_S = 40
+  const RESUME_MS = 2000
   let hovering = false
   let dragging = false
   let resumeAt = 0
@@ -70,15 +70,26 @@
     holdRotation()
   }
 
+  // Continuous drift, one frame at a time. `pos` keeps the sub-pixel position
+  // because scrollLeft rounds to device pixels and would stall a slow drift.
   $effect(() => {
-    trackEl.scrollLeft = setWidth()
+    let pos = setWidth()
+    trackEl.scrollLeft = pos
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
-    const id = setInterval(() => {
-      if (hovering || dragging || document.hidden) return
-      if (Date.now() < resumeAt) return
-      rotate(1)
-    }, ROTATE_MS)
-    return () => clearInterval(id)
+    let last = performance.now()
+    let frame = requestAnimationFrame(function drift(now) {
+      // Clamp so a backgrounded tab doesn't lurch forward when it returns.
+      const dt = Math.min(now - last, 100) / 1000
+      last = now
+      if (hovering || dragging || Date.now() < resumeAt) {
+        pos = trackEl.scrollLeft // follow wherever the visitor moved it
+      } else {
+        pos = wrapScroll(pos + DRIFT_PX_PER_S * dt, setWidth())
+        trackEl.scrollLeft = pos
+      }
+      frame = requestAnimationFrame(drift)
+    })
+    return () => cancelAnimationFrame(frame)
   })
 
   const partners = [
