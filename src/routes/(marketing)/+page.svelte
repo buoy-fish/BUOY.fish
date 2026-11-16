@@ -7,90 +7,72 @@
   } from "./../../config"
   import { onMount, onDestroy } from "svelte"
   import { deployments, mapLinks, stageMeta } from "$lib/data/deployments"
-  import { nextStop, wrapScroll } from "$lib/carousel"
+  import EmblaCarousel, { type EmblaCarouselType } from "embla-carousel"
+  import AutoScroll from "embla-carousel-auto-scroll"
 
   let videoElement: HTMLVideoElement
-  let trackEl: HTMLDivElement
+  let viewportEl: HTMLDivElement
+  let embla: EmblaCarouselType | undefined
 
-  // Partners carousel: the logos render COPIES times and drift left
-  // continuously forever, wrapping invisibly (see $lib/carousel). Hover, focus,
-  // drag, touch and the arrows pause it; it resumes RESUME_MS after the visitor
-  // lets go. It never moves on its own under prefers-reduced-motion.
-  // Ceiling: 4 copies cover a track up to ~2 sets wide (~2780px with six
-  // logos); a wider track shows a gap at the end of each loop. If that ever
-  // matters, derive the copy count from the track width.
-  const COPIES = 4
+  // Partners carousel (Embla + AutoScroll): drifts left continuously and loops
+  // forever. Embla moves the strip with a sub-pixel translate3d, which is what
+  // keeps the drift smooth; driving scrollLeft instead rounds every frame to a
+  // whole device pixel, and at a slow drift those steps show as visible hops.
+  // Hovering the strip or its arrows pauses it. Drag, swipe and the arrows hand
+  // control to the visitor, and it resumes RESUME_MS after they let go. It never
+  // moves on its own under prefers-reduced-motion.
+  // Ceiling: Embla only loops when the slides overflow the viewport, so the
+  // logos render COPIES times; 3 copies (~4170px with six logos) cover any
+  // common screen. If a wider one matters, derive the count from its width.
+  const COPIES = 3
   const copies = Array.from({ length: COPIES }, (_, i) => i)
   const DRIFT_PX_PER_S = 40
   const RESUME_MS = 2000
-  let hovering = false
-  let dragging = false
-  let resumeAt = 0
-  let dragStartX = 0
-  let dragStartLeft = 0
 
-  function logoAt(i: number) {
-    return trackEl.children[i] as HTMLElement
-  }
-  // Distance from a logo to the same logo in the next copy.
-  function setWidth() {
-    return logoAt(partners.length).offsetLeft - logoAt(0).offsetLeft
-  }
+  $effect(() => {
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches
+    const api = EmblaCarousel(
+      viewportEl,
+      { loop: true, dragFree: true, align: "start" },
+      reduceMotion
+        ? []
+        : [
+            AutoScroll({
+              speed: DRIFT_PX_PER_S / 60, // the unit is px per 1/60 s step
+              startDelay: RESUME_MS, // also the delay before every resume
+              stopOnInteraction: false,
+              stopOnMouseEnter: true,
+              // The region around the viewport, so hovering an arrow pauses too.
+              rootNode: (root) => root.parentElement,
+            }),
+          ],
+    )
+    embla = api
+    return () => {
+      api.destroy()
+      embla = undefined
+    }
+  })
 
   function rotate(direction: 1 | -1) {
-    const from = wrapScroll(trackEl.scrollLeft, setWidth())
-    const step = logoAt(1).offsetLeft - logoAt(0).offsetLeft
-    trackEl.scrollLeft = from
-    trackEl.scrollTo({
-      left: nextStop(from, step, direction),
-      behavior: "smooth",
-    })
+    if (!embla) return
+    const autoScroll = embla.plugins().autoScroll
+    // A mouse on the arrow has already paused the drift, and leaving resumes
+    // it. A tap never hovers, so pause it for the step and resume once the
+    // step settles.
+    const wasPlaying = autoScroll?.isPlaying() ?? false
+    autoScroll?.stop()
+    if (direction === 1) embla.scrollNext()
+    else embla.scrollPrev()
+    if (wasPlaying) {
+      embla.on("settle", function resume(api) {
+        api.off("settle", resume)
+        autoScroll?.play()
+      })
+    }
   }
-
-  function holdRotation() {
-    resumeAt = Date.now() + RESUME_MS
-  }
-
-  // Mouse drag; touch devices use native swipe scrolling.
-  function dragStart(e: PointerEvent) {
-    if (e.pointerType !== "mouse" || e.button !== 0) return
-    dragging = true
-    dragStartX = e.clientX
-    dragStartLeft = trackEl.scrollLeft
-    trackEl.setPointerCapture(e.pointerId)
-  }
-  function dragMove(e: PointerEvent) {
-    if (!dragging) return
-    const left = dragStartLeft - (e.clientX - dragStartX)
-    trackEl.scrollLeft = wrapScroll(left, setWidth())
-  }
-  function dragEnd() {
-    if (!dragging) return
-    dragging = false
-    holdRotation()
-  }
-
-  // Continuous drift, one frame at a time. `pos` keeps the sub-pixel position
-  // because scrollLeft rounds to device pixels and would stall a slow drift.
-  $effect(() => {
-    let pos = setWidth()
-    trackEl.scrollLeft = pos
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
-    let last = performance.now()
-    let frame = requestAnimationFrame(function drift(now) {
-      // Clamp so a backgrounded tab doesn't lurch forward when it returns.
-      const dt = Math.min(now - last, 100) / 1000
-      last = now
-      if (hovering || dragging || Date.now() < resumeAt) {
-        pos = trackEl.scrollLeft // follow wherever the visitor moved it
-      } else {
-        pos = wrapScroll(pos + DRIFT_PX_PER_S * dt, setWidth())
-        trackEl.scrollLeft = pos
-      }
-      frame = requestAnimationFrame(drift)
-    })
-    return () => cancelAnimationFrame(frame)
-  })
 
   const partners = [
     {
@@ -727,54 +709,53 @@
       class="relative"
       role="region"
       aria-label="Partners"
-      onpointerenter={(e) => (hovering = e.pointerType === "mouse")}
-      onpointerleave={() => (hovering = false)}
-      onfocusin={() => (hovering = true)}
-      onfocusout={() => (hovering = false)}
-      ontouchstart={holdRotation}
-      ontouchend={holdRotation}
+      aria-roledescription="carousel"
     >
-      <!-- Scroll track: the logos repeat COPIES times so it can loop forever -->
+      <!-- Embla viewport > container > slides. The logos repeat COPIES times
+           so there is always enough strip to loop. -->
       <div
-        bind:this={trackEl}
-        class="partner-track flex gap-6 overflow-x-auto px-8 py-4 select-none"
-        onpointerdown={dragStart}
-        onpointermove={dragMove}
-        onpointerup={dragEnd}
-        onpointercancel={dragEnd}
+        bind:this={viewportEl}
+        class="overflow-hidden py-4 select-none cursor-grab active:cursor-grabbing"
       >
-        {#each copies as copy}
-          {#each partners as p}
-            <div
-              aria-hidden={copy > 0 ? "true" : undefined}
-              class="group relative flex-shrink-0 w-52 h-36 flex items-center justify-center p-6 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-default {p.darkBg
-                ? 'bg-base-100 group-hover:bg-[#1a3a5c]'
-                : 'bg-base-100'}"
-            >
-              <img
-                src={p.logo}
-                draggable="false"
-                alt={p.alt}
-                class="h-16 md:h-20 object-contain transition-all duration-300 {p.invert
-                  ? 'invert grayscale group-hover:invert-0 group-hover:grayscale-0'
-                  : 'grayscale group-hover:grayscale-0'}"
-              />
+        <div class="flex touch-pan-y">
+          {#each copies as copy}
+            {#each partners as p}
+              <!-- Embla sets a transform on this wrapper to loop it, so the
+                   card's own hover lift lives on the inner element. -->
               <div
-                class="absolute inset-0 flex items-center justify-center bg-primary/95 text-primary-content rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4"
+                class="flex-none pl-6"
+                aria-hidden={copy > 0 ? "true" : undefined}
               >
-                <p class="text-sm text-center font-medium">{p.description}</p>
+                <div
+                  class="group relative w-52 h-36 flex items-center justify-center p-6 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 {p.darkBg
+                    ? 'bg-base-100 group-hover:bg-[#1a3a5c]'
+                    : 'bg-base-100'}"
+                >
+                  <img
+                    src={p.logo}
+                    draggable="false"
+                    alt={p.alt}
+                    class="h-16 md:h-20 object-contain transition-all duration-300 {p.invert
+                      ? 'invert grayscale group-hover:invert-0 group-hover:grayscale-0'
+                      : 'grayscale group-hover:grayscale-0'}"
+                  />
+                  <div
+                    class="absolute inset-0 flex items-center justify-center bg-primary/95 text-primary-content rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4"
+                  >
+                    <p class="text-sm text-center font-medium">
+                      {p.description}
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
+            {/each}
           {/each}
-        {/each}
+        </div>
       </div>
       <!-- Left/right scroll buttons -->
       <button
         class="absolute left-1 top-1/2 -translate-y-1/2 z-10 btn btn-circle btn-sm bg-base-100/90 border-none shadow-md hover:bg-base-100"
-        onclick={() => {
-          holdRotation()
-          rotate(-1)
-        }}
+        onclick={() => rotate(-1)}
         aria-label="Scroll partners left"
       >
         <svg
@@ -792,10 +773,7 @@
       </button>
       <button
         class="absolute right-1 top-1/2 -translate-y-1/2 z-10 btn btn-circle btn-sm bg-base-100/90 border-none shadow-md hover:bg-base-100"
-        onclick={() => {
-          holdRotation()
-          rotate(1)
-        }}
+        onclick={() => rotate(1)}
         aria-label="Scroll partners right"
       >
         <svg
@@ -861,18 +839,6 @@
       0 1px 2px rgb(15 23 42 / 0.35),
       0 2px 18px rgb(15 23 42 / 0.3);
   }
-  .partner-track {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-    cursor: grab;
-  }
-  .partner-track:active {
-    cursor: grabbing;
-  }
-  .partner-track::-webkit-scrollbar {
-    display: none;
-  }
-
   .hud-panel {
     background: rgba(10, 20, 40, 0.75);
     backdrop-filter: blur(12px);
