@@ -5,7 +5,7 @@
     WebsiteBaseUrl,
     WebsiteDescription,
   } from "./../../config"
-  import { onMount, onDestroy } from "svelte"
+  import { onMount, onDestroy, untrack } from "svelte"
   import { deployments, mapLinks, stageMeta } from "$lib/data/deployments"
   import { stepTarget, wrapTime } from "$lib/marquee"
 
@@ -76,13 +76,18 @@
 
   $effect(() => {
     const track = trackEl
-    const logo = (i: number) => track.children[i] as HTMLElement
+    const left = (i: number) => track.children[i].getBoundingClientRect().left
     // Distance from a logo to the same logo in the next copy.
-    const setWidth = logo(partners.length).offsetLeft - logo(0).offsetLeft
+    // Unrounded, unlike offsetLeft: with a non-default font size the rem-based
+    // slots are fractional, and a rounded loop distance hops at every wrap.
+    const setWidth = left(partners.length) - left(0)
     if (setWidth <= 0) return // not laid out (e.g. a hidden ancestor)
     const sizeCopies = () => {
       const widest = Math.max(screen.width, screen.height, window.innerWidth)
-      copyCount = Math.max(copyCount, Math.ceil(widest / setWidth) + 2)
+      // untrack: reading copyCount here would make this effect depend on it,
+      // so every growth would tear down and rebuild the animation at 0.
+      const have = untrack(() => copyCount)
+      copyCount = Math.max(have, Math.ceil(widest / setWidth) + 2)
     }
     sizeCopies()
     window.addEventListener("resize", sizeCopies)
@@ -156,9 +161,15 @@
     if (!dragging || !partnersDrift) return
     // Dragging right pulls the logos right, which is earlier in the loop.
     const dx = e.clientX - dragStartX
-    if (!scrubbed && Math.abs(dx) < DRAG_SLOP_PX) return
-    scrubbed = true
-    const time = dragStartTime - (dx / DRIFT_PX_PER_S) * 1000
+    if (!scrubbed) {
+      if (Math.abs(dx) < DRAG_SLOP_PX) return
+      scrubbed = true
+      // Measure from the slop edge, so the strip neither jumps by the slop
+      // nor loses a fast first move.
+      dragStartX += Math.sign(dx) * DRAG_SLOP_PX
+    }
+    const moved = e.clientX - dragStartX
+    const time = dragStartTime - (moved / DRIFT_PX_PER_S) * 1000
     partnersDrift.currentTime = wrapTime(time, loopMs)
   }
   function dragEnd() {
