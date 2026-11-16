@@ -23,14 +23,16 @@
   // seamless.
   // It plays only while canDrift(): on-screen, no mouse over the strip or its
   // arrows, no drag, no keyboard focus on an arrow, no prefers-reduced-motion,
-  // and not within RESUME_MS of a drag or an arrow press.
+  // and not held (RESUME_MS after a drag or an arrow press).
   const DRIFT_PX_PER_S = 60
   const RESUME_MS = 2000
   const STEP_MS = 300 // an arrow's slide to the next logo
-  // Copies of the logos: enough to cover the screen plus one set to slide
-  // into. The server renders 3; the browser adds more on wider screens.
-  // Ceiling: sized once from screen.width at load, so zooming the page out
-  // far enough afterwards can show a gap at the end of each loop.
+  // Copies of the logos: enough to cover the viewport plus one set to slide
+  // into. The server renders 3; the browser adds more for wider viewports,
+  // sized from the larger screen side (rotation) and grown on resize.
+  // The slot width is fixed (w-52 + pl-6 at every breakpoint), so the loop
+  // distance is measured once; making the cards responsive would need the
+  // animation rebuilt when that width changes.
   let copyCount = $state(3)
   const copies = $derived(Array.from({ length: copyCount }, (_, i) => i))
 
@@ -40,7 +42,7 @@
   let dragging = false
   let keyboardFocus = false
   let onScreen = false
-  let holdUntil = 0
+  let held = false
   let resumeTimer: ReturnType<typeof setTimeout> | undefined
   let stepFrame = 0
   let reduceMotion: MediaQueryList | undefined
@@ -52,7 +54,7 @@
       !dragging &&
       !keyboardFocus &&
       !reduceMotion?.matches &&
-      Date.now() >= holdUntil
+      !held
     )
   }
   function syncDrift() {
@@ -63,9 +65,12 @@
   }
   // A drag or an arrow takes over the strip; the drift resumes RESUME_MS later.
   function hold() {
-    holdUntil = Date.now() + RESUME_MS
+    held = true
     clearTimeout(resumeTimer)
-    resumeTimer = setTimeout(syncDrift, RESUME_MS)
+    resumeTimer = setTimeout(() => {
+      held = false
+      syncDrift()
+    }, RESUME_MS)
     syncDrift()
   }
 
@@ -74,7 +79,13 @@
     const logo = (i: number) => track.children[i] as HTMLElement
     // Distance from a logo to the same logo in the next copy.
     const setWidth = logo(partners.length).offsetLeft - logo(0).offsetLeft
-    copyCount = Math.max(3, Math.ceil(window.screen.width / setWidth) + 2)
+    if (setWidth <= 0) return // not laid out (e.g. a hidden ancestor)
+    const sizeCopies = () => {
+      const widest = Math.max(screen.width, screen.height, window.innerWidth)
+      copyCount = Math.max(copyCount, Math.ceil(widest / setWidth) + 2)
+    }
+    sizeCopies()
+    window.addEventListener("resize", sizeCopies)
     loopMs = (setWidth / DRIFT_PX_PER_S) * 1000
     partnersDrift = track.animate(
       [
@@ -94,6 +105,7 @@
     })
     visibility.observe(track)
     return () => {
+      window.removeEventListener("resize", sizeCopies)
       visibility.disconnect()
       reduceMotion?.removeEventListener("change", syncDrift)
       clearTimeout(resumeTimer)
@@ -124,12 +136,17 @@
 
   // Drag (mouse) and swipe (touch) scrub the animation. touch-pan-y leaves
   // vertical page scrolling to the browser, which then cancels the pointer.
+  // Scrubbing only begins past DRAG_SLOP_PX sideways, so a vertical scroll
+  // that starts on the strip neither nudges it nor holds it afterwards.
+  const DRAG_SLOP_PX = 6
   let dragStartX = 0
   let dragStartTime = 0
+  let scrubbed = false
   function dragStart(e: PointerEvent) {
     if (!partnersDrift || (e.pointerType === "mouse" && e.button !== 0)) return
     cancelAnimationFrame(stepFrame)
     dragging = true
+    scrubbed = false
     syncDrift()
     dragStartX = e.clientX
     dragStartTime = Number(partnersDrift.currentTime ?? 0)
@@ -139,13 +156,16 @@
     if (!dragging || !partnersDrift) return
     // Dragging right pulls the logos right, which is earlier in the loop.
     const dx = e.clientX - dragStartX
+    if (!scrubbed && Math.abs(dx) < DRAG_SLOP_PX) return
+    scrubbed = true
     const time = dragStartTime - (dx / DRIFT_PX_PER_S) * 1000
     partnersDrift.currentTime = wrapTime(time, loopMs)
   }
   function dragEnd() {
     if (!dragging) return
     dragging = false
-    hold()
+    if (scrubbed) hold()
+    else syncDrift() // a tap or a page scroll: carry straight on
   }
 
   function rotate(direction: 1 | -1) {
@@ -820,6 +840,7 @@
           onpointermove={dragMove}
           onpointerup={dragEnd}
           onpointercancel={dragEnd}
+          onlostpointercapture={dragEnd}
         >
           {#each copies as copy}
             {#each partners as p}
