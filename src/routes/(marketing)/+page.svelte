@@ -22,13 +22,17 @@
   // drag in progress, no keyboard focus on an arrow, and prefers-reduced-motion
   // off. syncDrift() applies that rule and runs on every event that can change
   // it; play() waits RESUME_MS, so it resumes 2s after the visitor lets go.
-  // The plugin's own hover/interaction handling stays off on purpose: it reads
-  // a tap's compatibility mouseenter as a hover (freezing the strip on phones)
-  // and forgets the hover whenever Embla re-inits on resize.
+  // The plugin's own hover and resume handling stays off on purpose
+  // (stopOnMouseEnter false; stopOnInteraction true, which keeps only its stop
+  // on pointerDown): it reads a tap's compatibility mouseenter as a hover,
+  // freezing the strip on phones, and forgets the hover whenever Embla
+  // re-inits on resize.
   // Ceiling: Embla only loops when the slides overflow the viewport, so the
-  // logos render COPIES times; 3 copies (~4170px with six logos) cover any
-  // common screen. A wider one stops looping, so the drift halts at the end.
-  // If that matters, derive the count from the viewport width.
+  // logos render COPIES times (3 copies, ~4170px with six logos). On a
+  // viewport wider than ~3,940 CSS px the loop turns off: the strip drifts to
+  // its end and stops, or, once every logo fits, holds still (syncDrift skips
+  // the plugin, which never initialises then). If that matters, derive the
+  // copy count from the viewport width.
   const COPIES = 3
   const copies = Array.from({ length: COPIES }, (_, i) => i)
   const DRIFT_PX_PER_S = 40
@@ -49,7 +53,10 @@
     )
   }
   function syncDrift() {
-    const autoScroll = embla?.plugins().autoScroll
+    // With a single snap the plugin's init returned early, and calling it
+    // would leave Embla with no scroll body (a TypeError every frame).
+    if (!embla || embla.scrollSnapList().length <= 1) return
+    const autoScroll = embla.plugins().autoScroll
     if (canDrift()) autoScroll?.play()
     else autoScroll?.stop()
   }
@@ -58,7 +65,8 @@
     reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)")
     const api = EmblaCarousel(
       viewportEl,
-      { loop: true, dragFree: true, align: "start" },
+      // Free momentum drag, except under reduced motion: no glide there.
+      { loop: true, dragFree: !reduceMotion.matches, align: "start" },
       [
         AutoScroll({
           speed: DRIFT_PX_PER_S / 60, // the unit is px per 1/60 s step
@@ -89,16 +97,19 @@
       // never settles, since it never stops moving.
       .on("settle", syncDrift)
       .on("reInit", syncDrift) // re-init re-runs the plugin's init
-    reduceMotion.addEventListener("change", syncDrift)
-    // Don't spend a 60Hz animation loop on a strip nobody can see.
-    const visibility = new IntersectionObserver(([entry]) => {
-      onScreen = entry.isIntersecting
+    // reInit fires "reInit", which calls syncDrift.
+    const motionChange = () => api.reInit({ dragFree: !reduceMotion?.matches })
+    reduceMotion.addEventListener("change", motionChange)
+    // Don't spend a 60Hz animation loop on a strip nobody can see. A fast
+    // scroll can queue several entries; the last one is current.
+    const visibility = new IntersectionObserver((entries) => {
+      onScreen = entries[entries.length - 1].isIntersecting
       syncDrift()
     })
     visibility.observe(viewportEl)
     return () => {
       visibility.disconnect()
-      reduceMotion?.removeEventListener("change", syncDrift)
+      reduceMotion?.removeEventListener("change", motionChange)
       api.destroy()
       embla = undefined
     }
@@ -112,9 +123,14 @@
     syncDrift()
   }
   // A keyboard user holds it still by focusing an arrow. A mouse click also
-  // focuses the button but isn't :focus-visible, so it doesn't count.
+  // focuses the button but isn't :focus-visible, so it doesn't count until a
+  // key is pressed on it.
   function focusChange(e: FocusEvent, entering: boolean) {
     keyboardFocus = entering && (e.target as Element).matches(":focus-visible")
+    syncDrift()
+  }
+  function keyPressed() {
+    keyboardFocus = true
     syncDrift()
   }
 
@@ -761,7 +777,6 @@
       class="relative"
       role="region"
       aria-label="Partners"
-      aria-roledescription="carousel"
       onpointerenter={(e) => hoverChange(e, true)}
       onpointerleave={(e) => hoverChange(e, false)}
       onfocusin={(e) => focusChange(e, true)}
@@ -812,6 +827,7 @@
       <button
         class="absolute left-1 top-1/2 -translate-y-1/2 z-10 btn btn-circle btn-sm bg-base-100/90 border-none shadow-md hover:bg-base-100"
         onclick={() => rotate(-1)}
+        onkeydown={keyPressed}
         aria-label="Scroll partners left"
       >
         <svg
@@ -830,6 +846,7 @@
       <button
         class="absolute right-1 top-1/2 -translate-y-1/2 z-10 btn btn-circle btn-sm bg-base-100/90 border-none shadow-md hover:bg-base-100"
         onclick={() => rotate(1)}
+        onkeydown={keyPressed}
         aria-label="Scroll partners right"
       >
         <svg
