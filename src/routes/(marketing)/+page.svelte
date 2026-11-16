@@ -29,10 +29,9 @@
   // re-inits on resize.
   // Ceiling: Embla only loops when the slides overflow the viewport, so the
   // logos render COPIES times (3 copies, ~4170px with six logos). On a
-  // viewport wider than ~3,940 CSS px the loop turns off: the strip drifts to
-  // its end and stops, or, once every logo fits, holds still (syncDrift skips
-  // the plugin, which never initialises then). If that matters, derive the
-  // copy count from the viewport width.
+  // viewport wider than ~3,940 CSS px Embla turns the loop off, and the strip
+  // then holds still (syncDrift won't run the plugin without a loop). If that
+  // matters, derive the copy count from the viewport width.
   const COPIES = 3
   const copies = Array.from({ length: COPIES }, (_, i) => i)
   const DRIFT_PX_PER_S = 40
@@ -53,10 +52,16 @@
     )
   }
   function syncDrift() {
-    // With a single snap the plugin's init returned early, and calling it
-    // would leave Embla with no scroll body (a TypeError every frame).
-    if (!embla || embla.scrollSnapList().length <= 1) return
+    if (!embla) return
     const autoScroll = embla.plugins().autoScroll
+    // Without a loop the drift would hit the end, stop, settle and restart
+    // forever. And once every logo fits there is a single snap, the plugin's
+    // init returned early, and play() would leave Embla with no scroll body
+    // (a TypeError every frame). stop() is a no-op on a plugin that never ran.
+    if (!embla.internalEngine().options.loop) {
+      autoScroll?.stop()
+      return
+    }
     if (canDrift()) autoScroll?.play()
     else autoScroll?.stop()
   }
@@ -96,7 +101,12 @@
       // A drag's glide and an arrow step end in "settle". The drift itself
       // never settles, since it never stops moving.
       .on("settle", syncDrift)
-      .on("reInit", syncDrift) // re-init re-runs the plugin's init
+      .on("reInit", () => {
+        // Re-init tears down Embla's drag listeners, so a drag in progress
+        // never gets its pointerUp; don't let it hold the drift forever.
+        dragging = false
+        syncDrift() // re-init also re-runs the plugin's init
+      })
     // reInit fires "reInit", which calls syncDrift.
     const motionChange = () => api.reInit({ dragFree: !reduceMotion?.matches })
     reduceMotion.addEventListener("change", motionChange)
