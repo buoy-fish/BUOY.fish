@@ -7,39 +7,42 @@
   } from "./../../config"
   import { onMount, onDestroy } from "svelte"
   import { deployments, mapLinks, stageMeta } from "$lib/data/deployments"
-  import EmblaCarousel, { type EmblaCarouselType } from "embla-carousel"
-  import AutoScroll from "embla-carousel-auto-scroll"
+  import { stepTarget, wrapTime } from "$lib/marquee"
 
   let videoElement: HTMLVideoElement
-  let viewportEl: HTMLDivElement
-  let embla: EmblaCarouselType | undefined
+  let trackEl: HTMLDivElement
 
-  // Partners carousel (Embla + AutoScroll): drifts left continuously and loops
-  // forever. Embla moves the strip with a sub-pixel translate3d, which is what
-  // keeps the drift smooth; driving scrollLeft instead rounds every frame to a
-  // whole device pixel, and at a slow drift those steps show as visible hops.
-  // It drifts only while canDrift(): no mouse over the strip or its arrows, no
-  // drag in progress, no keyboard focus on an arrow, and prefers-reduced-motion
-  // off. syncDrift() applies that rule and runs on every event that can change
-  // it; play() waits RESUME_MS, so it resumes 2s after the visitor lets go.
-  // The plugin's own hover and resume handling stays off on purpose
-  // (stopOnMouseEnter false; stopOnInteraction true, which keeps only its stop
-  // on pointerDown): it reads a tap's compatibility mouseenter as a hover,
-  // freezing the strip on phones, and forgets the hover whenever Embla
-  // re-inits on resize.
-  // Ceiling: Embla only loops when the slides overflow the viewport, so the
-  // logos render COPIES times (3 copies, ~4170px with six logos). On a
-  // viewport wider than ~3,940 CSS px Embla turns the loop off, and the strip
-  // then holds still (syncDrift won't run the plugin without a loop). If that
-  // matters, derive the copy count from the viewport width.
-  const COPIES = 3
-  const copies = Array.from({ length: COPIES }, (_, i) => i)
-  const DRIFT_PX_PER_S = 40
+  // Partners strip: drifts left forever as one infinite Web Animation on the
+  // track's transform. The browser's compositor runs it on the display's own
+  // clock, with no JavaScript per frame, which is what keeps it smooth. 60 px/s
+  // is exactly 1 px per frame at 60 Hz (and 1 device px per frame at 2x and
+  // 120 Hz), so logo edges don't smear across two pixel columns.
+  // One loop slides the track left by one set of logos, so the animation's
+  // currentTime IS the strip's position: dragging and the arrows move it by
+  // setting currentTime (folded into the loop by wrapTime), and the loop stays
+  // seamless.
+  // It plays only while canDrift(): on-screen, no mouse over the strip or its
+  // arrows, no drag, no keyboard focus on an arrow, no prefers-reduced-motion,
+  // and not within RESUME_MS of a drag or an arrow press.
+  const DRIFT_PX_PER_S = 60
   const RESUME_MS = 2000
+  const STEP_MS = 300 // an arrow's slide to the next logo
+  // Copies of the logos: enough to cover the screen plus one set to slide
+  // into. The server renders 3; the browser adds more on wider screens.
+  // Ceiling: sized once from screen.width at load, so zooming the page out
+  // far enough afterwards can show a gap at the end of each loop.
+  let copyCount = $state(3)
+  const copies = $derived(Array.from({ length: copyCount }, (_, i) => i))
+
+  let partnersDrift: Animation | undefined
+  let loopMs = 0 // one loop = one set of logos at DRIFT_PX_PER_S
   let hovering = false
   let dragging = false
   let keyboardFocus = false
   let onScreen = false
+  let holdUntil = 0
+  let resumeTimer: ReturnType<typeof setTimeout> | undefined
+  let stepFrame = 0
   let reduceMotion: MediaQueryList | undefined
 
   function canDrift() {
@@ -48,80 +51,55 @@
       !hovering &&
       !dragging &&
       !keyboardFocus &&
-      !reduceMotion?.matches
+      !reduceMotion?.matches &&
+      Date.now() >= holdUntil
     )
   }
   function syncDrift() {
-    if (!embla) return
-    const autoScroll = embla.plugins().autoScroll
-    // Without a loop the drift would hit the end, stop, settle and restart
-    // forever. And once every logo fits there is a single snap, the plugin's
-    // init returned early, and play() would leave Embla with no scroll body
-    // (a TypeError every frame). stop() is a no-op on a plugin that never ran.
-    if (!embla.internalEngine().options.loop) {
-      autoScroll?.stop()
-      return
-    }
-    if (canDrift()) autoScroll?.play()
-    else autoScroll?.stop()
+    if (!partnersDrift) return
+    const running = partnersDrift.playState === "running"
+    if (canDrift() && !running) partnersDrift.play()
+    else if (!canDrift() && running) partnersDrift.pause()
+  }
+  // A drag or an arrow takes over the strip; the drift resumes RESUME_MS later.
+  function hold() {
+    holdUntil = Date.now() + RESUME_MS
+    clearTimeout(resumeTimer)
+    resumeTimer = setTimeout(syncDrift, RESUME_MS)
+    syncDrift()
   }
 
   $effect(() => {
-    reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)")
-    const api = EmblaCarousel(
-      viewportEl,
-      // Free momentum drag, except under reduced motion: no glide there.
-      { loop: true, dragFree: !reduceMotion.matches, align: "start" },
+    const track = trackEl
+    const logo = (i: number) => track.children[i] as HTMLElement
+    // Distance from a logo to the same logo in the next copy.
+    const setWidth = logo(partners.length).offsetLeft - logo(0).offsetLeft
+    copyCount = Math.max(3, Math.ceil(window.screen.width / setWidth) + 2)
+    loopMs = (setWidth / DRIFT_PX_PER_S) * 1000
+    partnersDrift = track.animate(
       [
-        AutoScroll({
-          speed: DRIFT_PX_PER_S / 60, // the unit is px per 1/60 s step
-          startDelay: RESUME_MS, // also the delay before every play()
-          playOnInit: false, // syncDrift() starts it, here and after reInit
-          stopOnInteraction: true,
-          stopOnMouseEnter: false,
-          stopOnFocusIn: false,
-        }),
+        { transform: "translate3d(0, 0, 0)" },
+        { transform: `translate3d(${-setWidth}px, 0, 0)` },
       ],
+      { duration: loopMs, iterations: Infinity, easing: "linear" },
     )
-    embla = api
-    api
-      .on("pointerDown", () => {
-        dragging = true
-        syncDrift()
-      })
-      .on("pointerUp", (api) => {
-        dragging = false
-        // A release that throws the strip glides and then fires "settle". One
-        // that doesn't move it (a tap, a vertical page scroll starting here,
-        // a drag held still) starts no animation and never fires "settle", so
-        // resume now. scrollBody is Embla's internal engine; the version is
-        // pinned and the AutoScroll plugin itself relies on it.
-        if (api.internalEngine().scrollBody.settled()) syncDrift()
-      })
-      // A drag's glide and an arrow step end in "settle". The drift itself
-      // never settles, since it never stops moving.
-      .on("settle", syncDrift)
-      .on("reInit", () => {
-        // Re-init tears down Embla's drag listeners, so a drag in progress
-        // never gets its pointerUp; don't let it hold the drift forever.
-        dragging = false
-        syncDrift() // re-init also re-runs the plugin's init
-      })
-    // reInit fires "reInit", which calls syncDrift.
-    const motionChange = () => api.reInit({ dragFree: !reduceMotion?.matches })
-    reduceMotion.addEventListener("change", motionChange)
-    // Don't spend a 60Hz animation loop on a strip nobody can see. A fast
-    // scroll can queue several entries; the last one is current.
+    partnersDrift.pause()
+    reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)")
+    reduceMotion.addEventListener("change", syncDrift)
+    // Don't run the animation for a strip nobody can see. A fast scroll can
+    // queue several entries; the last one is current.
     const visibility = new IntersectionObserver((entries) => {
       onScreen = entries[entries.length - 1].isIntersecting
       syncDrift()
     })
-    visibility.observe(viewportEl)
+    visibility.observe(track)
     return () => {
       visibility.disconnect()
-      reduceMotion?.removeEventListener("change", motionChange)
-      api.destroy()
-      embla = undefined
+      reduceMotion?.removeEventListener("change", syncDrift)
+      clearTimeout(resumeTimer)
+      cancelAnimationFrame(stepFrame)
+      partnersDrift?.cancel()
+      partnersDrift = undefined
     }
   })
 
@@ -144,12 +122,50 @@
     syncDrift()
   }
 
+  // Drag (mouse) and swipe (touch) scrub the animation. touch-pan-y leaves
+  // vertical page scrolling to the browser, which then cancels the pointer.
+  let dragStartX = 0
+  let dragStartTime = 0
+  function dragStart(e: PointerEvent) {
+    if (!partnersDrift || (e.pointerType === "mouse" && e.button !== 0)) return
+    cancelAnimationFrame(stepFrame)
+    dragging = true
+    syncDrift()
+    dragStartX = e.clientX
+    dragStartTime = Number(partnersDrift.currentTime ?? 0)
+    trackEl.setPointerCapture(e.pointerId)
+  }
+  function dragMove(e: PointerEvent) {
+    if (!dragging || !partnersDrift) return
+    // Dragging right pulls the logos right, which is earlier in the loop.
+    const dx = e.clientX - dragStartX
+    const time = dragStartTime - (dx / DRIFT_PX_PER_S) * 1000
+    partnersDrift.currentTime = wrapTime(time, loopMs)
+  }
+  function dragEnd() {
+    if (!dragging) return
+    dragging = false
+    hold()
+  }
+
   function rotate(direction: 1 | -1) {
-    if (!embla) return
-    embla.plugins().autoScroll?.stop() // the step's "settle" resumes it
-    const jump = reduceMotion?.matches ?? false // step without animating
-    if (direction === 1) embla.scrollNext(jump)
-    else embla.scrollPrev(jump)
+    if (!partnersDrift) return
+    const anim = partnersDrift
+    const from = Number(anim.currentTime ?? 0)
+    const to = stepTarget(from, loopMs / partners.length, direction)
+    hold()
+    cancelAnimationFrame(stepFrame)
+    if (reduceMotion?.matches) {
+      anim.currentTime = wrapTime(to, loopMs) // jump, don't slide
+      return
+    }
+    const start = performance.now()
+    stepFrame = requestAnimationFrame(function step(now) {
+      const k = Math.min((now - start) / STEP_MS, 1)
+      const eased = 1 - (1 - k) ** 3 // ease-out
+      anim.currentTime = wrapTime(from + (to - from) * eased, loopMs)
+      if (k < 1) stepFrame = requestAnimationFrame(step)
+    })
   }
 
   const partners = [
@@ -792,17 +808,21 @@
       onfocusin={(e) => focusChange(e, true)}
       onfocusout={(e) => focusChange(e, false)}
     >
-      <!-- Embla viewport > container > slides. The logos repeat COPIES times
-           so there is always enough strip to loop. -->
+      <!-- The logos repeat copyCount times so the track can slide one full
+           set left and loop. -->
       <div
-        bind:this={viewportEl}
         class="overflow-hidden py-4 select-none cursor-grab active:cursor-grabbing"
       >
-        <div class="flex touch-pan-y">
+        <div
+          bind:this={trackEl}
+          class="flex w-max touch-pan-y"
+          onpointerdown={dragStart}
+          onpointermove={dragMove}
+          onpointerup={dragEnd}
+          onpointercancel={dragEnd}
+        >
           {#each copies as copy}
             {#each partners as p}
-              <!-- Embla sets a transform on this wrapper to loop it, so the
-                   card's own hover lift lives on the inner element. -->
               <div
                 class="flex-none pl-6"
                 aria-hidden={copy > 0 ? "true" : undefined}
