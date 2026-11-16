@@ -36,10 +36,17 @@
   let hovering = false
   let dragging = false
   let keyboardFocus = false
+  let onScreen = false
   let reduceMotion: MediaQueryList | undefined
 
   function canDrift() {
-    return !hovering && !dragging && !keyboardFocus && !reduceMotion?.matches
+    return (
+      onScreen &&
+      !hovering &&
+      !dragging &&
+      !keyboardFocus &&
+      !reduceMotion?.matches
+    )
   }
   function syncDrift() {
     const autoScroll = embla?.plugins().autoScroll
@@ -56,7 +63,7 @@
         AutoScroll({
           speed: DRIFT_PX_PER_S / 60, // the unit is px per 1/60 s step
           startDelay: RESUME_MS, // also the delay before every play()
-          playOnInit: canDrift(),
+          playOnInit: false, // syncDrift() starts it, here and after reInit
           stopOnInteraction: true,
           stopOnMouseEnter: false,
           stopOnFocusIn: false,
@@ -69,13 +76,28 @@
         dragging = true
         syncDrift()
       })
-      .on("pointerUp", () => (dragging = false))
-      // A drag's glide, an arrow step and a tap all end in "settle". The drift
-      // itself never settles, since it never stops moving.
+      .on("pointerUp", (api) => {
+        dragging = false
+        // A release that throws the strip glides and then fires "settle". One
+        // that doesn't move it (a tap, a vertical page scroll starting here,
+        // a drag held still) starts no animation and never fires "settle", so
+        // resume now. scrollBody is Embla's internal engine; the version is
+        // pinned and the AutoScroll plugin itself relies on it.
+        if (api.internalEngine().scrollBody.settled()) syncDrift()
+      })
+      // A drag's glide and an arrow step end in "settle". The drift itself
+      // never settles, since it never stops moving.
       .on("settle", syncDrift)
-      .on("reInit", syncDrift) // re-init replays playOnInit
+      .on("reInit", syncDrift) // re-init re-runs the plugin's init
     reduceMotion.addEventListener("change", syncDrift)
+    // Don't spend a 60Hz animation loop on a strip nobody can see.
+    const visibility = new IntersectionObserver(([entry]) => {
+      onScreen = entry.isIntersecting
+      syncDrift()
+    })
+    visibility.observe(viewportEl)
     return () => {
+      visibility.disconnect()
       reduceMotion?.removeEventListener("change", syncDrift)
       api.destroy()
       embla = undefined
@@ -99,8 +121,9 @@
   function rotate(direction: 1 | -1) {
     if (!embla) return
     embla.plugins().autoScroll?.stop() // the step's "settle" resumes it
-    if (direction === 1) embla.scrollNext()
-    else embla.scrollPrev()
+    const jump = reduceMotion?.matches ?? false // step without animating
+    if (direction === 1) embla.scrollNext(jump)
+    else embla.scrollPrev(jump)
   }
 
   const partners = [
