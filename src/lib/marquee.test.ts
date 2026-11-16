@@ -23,8 +23,8 @@ describe("wrapTime", () => {
   })
 })
 
-// An arrow moves the strip one logo, and lands on a logo boundary even when the
-// drift (or a drag) left it part-way between two.
+// An arrow moves the strip to the next logo boundary in the pressed direction:
+// never more than one logo, and a full logo when it already sits on one.
 describe("stepTarget", () => {
   const slot = 3867 // ms of drift per logo
 
@@ -36,9 +36,17 @@ describe("stepTarget", () => {
     expect(stepTarget(2 * slot, slot, -1)).toBe(slot)
   })
 
-  it("from part-way, steps relative to the nearest logo", () => {
+  it("from part-way, stops at the next boundary in that direction", () => {
+    // Just past a logo or just short of the next, forward lands on the next.
     expect(stepTarget(2 * slot + 100, slot, 1)).toBe(3 * slot)
-    expect(stepTarget(2 * slot + slot - 100, slot, 1)).toBe(4 * slot)
-    expect(stepTarget(2 * slot + 100, slot, -1)).toBe(slot)
+    expect(stepTarget(3 * slot - 100, slot, 1)).toBe(3 * slot)
+    // Backward lands on the boundary just behind.
+    expect(stepTarget(2 * slot + 100, slot, -1)).toBe(2 * slot)
+    expect(stepTarget(3 * slot - 100, slot, -1)).toBe(2 * slot)
+  })
+
+  it("treats a hair off a boundary (float error) as on it", () => {
+    expect(stepTarget(2 * slot + 1e-6, slot, 1)).toBe(3 * slot)
+    expect(stepTarget(2 * slot - 1e-6, slot, -1)).toBe(slot)
   })
 })

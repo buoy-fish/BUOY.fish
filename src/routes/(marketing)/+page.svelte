@@ -147,8 +147,12 @@
   let dragStartX = 0
   let dragStartTime = 0
   let scrubbed = false
+  // One pointer drives a drag; a second finger is ignored until it ends.
+  let dragPointer: number | undefined
   function dragStart(e: PointerEvent) {
-    if (!partnersDrift || (e.pointerType === "mouse" && e.button !== 0)) return
+    if (!partnersDrift || dragging) return
+    if (e.pointerType === "mouse" && e.button !== 0) return
+    dragPointer = e.pointerId
     cancelAnimationFrame(stepFrame)
     dragging = true
     scrubbed = false
@@ -158,7 +162,7 @@
     trackEl.setPointerCapture(e.pointerId)
   }
   function dragMove(e: PointerEvent) {
-    if (!dragging || !partnersDrift) return
+    if (!dragging || !partnersDrift || e.pointerId !== dragPointer) return
     // Dragging right pulls the logos right, which is earlier in the loop.
     const dx = e.clientX - dragStartX
     if (!scrubbed) {
@@ -172,9 +176,10 @@
     const time = dragStartTime - (moved / DRIFT_PX_PER_S) * 1000
     partnersDrift.currentTime = wrapTime(time, loopMs)
   }
-  function dragEnd() {
-    if (!dragging) return
+  function dragEnd(e: PointerEvent) {
+    if (!dragging || e.pointerId !== dragPointer) return
     dragging = false
+    dragPointer = undefined
     if (scrubbed) hold()
     else syncDrift() // a tap or a page scroll: carry straight on
   }
@@ -182,10 +187,10 @@
   function rotate(direction: 1 | -1) {
     if (!partnersDrift) return
     const anim = partnersDrift
+    hold() // pause first, so the step starts from where the strip stopped
+    cancelAnimationFrame(stepFrame)
     const from = Number(anim.currentTime ?? 0)
     const to = stepTarget(from, loopMs / partners.length, direction)
-    hold()
-    cancelAnimationFrame(stepFrame)
     if (reduceMotion?.matches) {
       anim.currentTime = wrapTime(to, loopMs) // jump, don't slide
       return
@@ -841,12 +846,10 @@
     >
       <!-- The logos repeat copyCount times so the track can slide one full
            set left and loop. -->
-      <div
-        class="overflow-hidden py-4 select-none cursor-grab active:cursor-grabbing"
-      >
+      <div class="overflow-hidden select-none">
         <div
           bind:this={trackEl}
-          class="flex w-max touch-pan-y"
+          class="flex w-max py-4 touch-pan-y cursor-grab active:cursor-grabbing"
           onpointerdown={dragStart}
           onpointermove={dragMove}
           onpointerup={dragEnd}
