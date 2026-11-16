@@ -152,6 +152,14 @@
   function dragStart(e: PointerEvent) {
     if (!partnersDrift || dragging) return
     if (e.pointerType === "mouse" && e.button !== 0) return
+    // Capture first: if the pointer is already gone this throws, and no drag
+    // state may be set, or `dragging` would stick and block the drift and
+    // every later drag.
+    try {
+      trackEl.setPointerCapture(e.pointerId)
+    } catch {
+      return
+    }
     dragPointer = e.pointerId
     cancelAnimationFrame(stepFrame)
     dragging = true
@@ -159,7 +167,6 @@
     syncDrift()
     dragStartX = e.clientX
     dragStartTime = Number(partnersDrift.currentTime ?? 0)
-    trackEl.setPointerCapture(e.pointerId)
   }
   function dragMove(e: PointerEvent) {
     if (!dragging || !partnersDrift || e.pointerId !== dragPointer) return
