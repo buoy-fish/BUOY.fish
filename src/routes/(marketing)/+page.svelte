@@ -18,60 +18,89 @@
   // forever. Embla moves the strip with a sub-pixel translate3d, which is what
   // keeps the drift smooth; driving scrollLeft instead rounds every frame to a
   // whole device pixel, and at a slow drift those steps show as visible hops.
-  // Hovering the strip or its arrows pauses it. Drag, swipe and the arrows hand
-  // control to the visitor, and it resumes RESUME_MS after they let go. It never
-  // moves on its own under prefers-reduced-motion.
+  // It drifts only while canDrift(): no mouse over the strip or its arrows, no
+  // drag in progress, no keyboard focus on an arrow, and prefers-reduced-motion
+  // off. syncDrift() applies that rule and runs on every event that can change
+  // it; play() waits RESUME_MS, so it resumes 2s after the visitor lets go.
+  // The plugin's own hover/interaction handling stays off on purpose: it reads
+  // a tap's compatibility mouseenter as a hover (freezing the strip on phones)
+  // and forgets the hover whenever Embla re-inits on resize.
   // Ceiling: Embla only loops when the slides overflow the viewport, so the
   // logos render COPIES times; 3 copies (~4170px with six logos) cover any
-  // common screen. If a wider one matters, derive the count from its width.
+  // common screen. A wider one stops looping, so the drift halts at the end.
+  // If that matters, derive the count from the viewport width.
   const COPIES = 3
   const copies = Array.from({ length: COPIES }, (_, i) => i)
   const DRIFT_PX_PER_S = 40
   const RESUME_MS = 2000
+  let hovering = false
+  let dragging = false
+  let keyboardFocus = false
+  let reduceMotion: MediaQueryList | undefined
+
+  function canDrift() {
+    return !hovering && !dragging && !keyboardFocus && !reduceMotion?.matches
+  }
+  function syncDrift() {
+    const autoScroll = embla?.plugins().autoScroll
+    if (canDrift()) autoScroll?.play()
+    else autoScroll?.stop()
+  }
 
   $effect(() => {
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches
+    reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)")
     const api = EmblaCarousel(
       viewportEl,
       { loop: true, dragFree: true, align: "start" },
-      reduceMotion
-        ? []
-        : [
-            AutoScroll({
-              speed: DRIFT_PX_PER_S / 60, // the unit is px per 1/60 s step
-              startDelay: RESUME_MS, // also the delay before every resume
-              stopOnInteraction: false,
-              stopOnMouseEnter: true,
-              // The region around the viewport, so hovering an arrow pauses too.
-              rootNode: (root) => root.parentElement,
-            }),
-          ],
+      [
+        AutoScroll({
+          speed: DRIFT_PX_PER_S / 60, // the unit is px per 1/60 s step
+          startDelay: RESUME_MS, // also the delay before every play()
+          playOnInit: canDrift(),
+          stopOnInteraction: true,
+          stopOnMouseEnter: false,
+          stopOnFocusIn: false,
+        }),
+      ],
     )
     embla = api
+    api
+      .on("pointerDown", () => {
+        dragging = true
+        syncDrift()
+      })
+      .on("pointerUp", () => (dragging = false))
+      // A drag's glide, an arrow step and a tap all end in "settle". The drift
+      // itself never settles, since it never stops moving.
+      .on("settle", syncDrift)
+      .on("reInit", syncDrift) // re-init replays playOnInit
+    reduceMotion.addEventListener("change", syncDrift)
     return () => {
+      reduceMotion?.removeEventListener("change", syncDrift)
       api.destroy()
       embla = undefined
     }
   })
 
+  // Pointer events report the real input type even for a tap's compatibility
+  // mouse events, so only an actual mouse counts as hovering.
+  function hoverChange(e: PointerEvent, entering: boolean) {
+    if (e.pointerType !== "mouse") return
+    hovering = entering
+    syncDrift()
+  }
+  // A keyboard user holds it still by focusing an arrow. A mouse click also
+  // focuses the button but isn't :focus-visible, so it doesn't count.
+  function focusChange(e: FocusEvent, entering: boolean) {
+    keyboardFocus = entering && (e.target as Element).matches(":focus-visible")
+    syncDrift()
+  }
+
   function rotate(direction: 1 | -1) {
     if (!embla) return
-    const autoScroll = embla.plugins().autoScroll
-    // A mouse on the arrow has already paused the drift, and leaving resumes
-    // it. A tap never hovers, so pause it for the step and resume once the
-    // step settles.
-    const wasPlaying = autoScroll?.isPlaying() ?? false
-    autoScroll?.stop()
+    embla.plugins().autoScroll?.stop() // the step's "settle" resumes it
     if (direction === 1) embla.scrollNext()
     else embla.scrollPrev()
-    if (wasPlaying) {
-      embla.on("settle", function resume(api) {
-        api.off("settle", resume)
-        autoScroll?.play()
-      })
-    }
   }
 
   const partners = [
@@ -710,6 +739,10 @@
       role="region"
       aria-label="Partners"
       aria-roledescription="carousel"
+      onpointerenter={(e) => hoverChange(e, true)}
+      onpointerleave={(e) => hoverChange(e, false)}
+      onfocusin={(e) => focusChange(e, true)}
+      onfocusout={(e) => focusChange(e, false)}
     >
       <!-- Embla viewport > container > slides. The logos repeat COPIES times
            so there is always enough strip to loop. -->
