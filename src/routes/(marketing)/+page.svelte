@@ -7,9 +7,150 @@
   } from "./../../config"
   import { onMount, onDestroy } from "svelte"
   import { deployments, mapLinks, stageMeta } from "$lib/data/deployments"
+  import EmblaCarousel, { type EmblaCarouselType } from "embla-carousel"
+  import AutoScroll from "embla-carousel-auto-scroll"
 
   let videoElement: HTMLVideoElement
-  let trackEl: HTMLDivElement
+  let viewportEl: HTMLDivElement
+  let embla: EmblaCarouselType | undefined
+
+  // Partners carousel (Embla + AutoScroll): drifts left continuously and loops
+  // forever. Embla moves the strip with a sub-pixel translate3d, which is what
+  // keeps the drift smooth; driving scrollLeft instead rounds every frame to a
+  // whole device pixel, and at a slow drift those steps show as visible hops.
+  // It drifts only while canDrift(): no mouse over the strip or its arrows, no
+  // drag in progress, no keyboard focus on an arrow, and prefers-reduced-motion
+  // off. syncDrift() applies that rule and runs on every event that can change
+  // it; play() waits RESUME_MS, so it resumes 2s after the visitor lets go.
+  // The plugin's own hover and resume handling stays off on purpose
+  // (stopOnMouseEnter false; stopOnInteraction true, which keeps only its stop
+  // on pointerDown): it reads a tap's compatibility mouseenter as a hover,
+  // freezing the strip on phones, and forgets the hover whenever Embla
+  // re-inits on resize.
+  // Ceiling: Embla only loops when the slides overflow the viewport, so the
+  // logos render COPIES times (3 copies, ~4170px with six logos). On a
+  // viewport wider than ~3,940 CSS px Embla turns the loop off, and the strip
+  // then holds still (syncDrift won't run the plugin without a loop). If that
+  // matters, derive the copy count from the viewport width.
+  const COPIES = 3
+  const copies = Array.from({ length: COPIES }, (_, i) => i)
+  const DRIFT_PX_PER_S = 40
+  const RESUME_MS = 2000
+  let hovering = false
+  let dragging = false
+  let keyboardFocus = false
+  let onScreen = false
+  let reduceMotion: MediaQueryList | undefined
+
+  function canDrift() {
+    return (
+      onScreen &&
+      !hovering &&
+      !dragging &&
+      !keyboardFocus &&
+      !reduceMotion?.matches
+    )
+  }
+  function syncDrift() {
+    if (!embla) return
+    const autoScroll = embla.plugins().autoScroll
+    // Without a loop the drift would hit the end, stop, settle and restart
+    // forever. And once every logo fits there is a single snap, the plugin's
+    // init returned early, and play() would leave Embla with no scroll body
+    // (a TypeError every frame). stop() is a no-op on a plugin that never ran.
+    if (!embla.internalEngine().options.loop) {
+      autoScroll?.stop()
+      return
+    }
+    if (canDrift()) autoScroll?.play()
+    else autoScroll?.stop()
+  }
+
+  $effect(() => {
+    reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const api = EmblaCarousel(
+      viewportEl,
+      // Free momentum drag, except under reduced motion: no glide there.
+      { loop: true, dragFree: !reduceMotion.matches, align: "start" },
+      [
+        AutoScroll({
+          speed: DRIFT_PX_PER_S / 60, // the unit is px per 1/60 s step
+          startDelay: RESUME_MS, // also the delay before every play()
+          playOnInit: false, // syncDrift() starts it, here and after reInit
+          stopOnInteraction: true,
+          stopOnMouseEnter: false,
+          stopOnFocusIn: false,
+        }),
+      ],
+    )
+    embla = api
+    api
+      .on("pointerDown", () => {
+        dragging = true
+        syncDrift()
+      })
+      .on("pointerUp", (api) => {
+        dragging = false
+        // A release that throws the strip glides and then fires "settle". One
+        // that doesn't move it (a tap, a vertical page scroll starting here,
+        // a drag held still) starts no animation and never fires "settle", so
+        // resume now. scrollBody is Embla's internal engine; the version is
+        // pinned and the AutoScroll plugin itself relies on it.
+        if (api.internalEngine().scrollBody.settled()) syncDrift()
+      })
+      // A drag's glide and an arrow step end in "settle". The drift itself
+      // never settles, since it never stops moving.
+      .on("settle", syncDrift)
+      .on("reInit", () => {
+        // Re-init tears down Embla's drag listeners, so a drag in progress
+        // never gets its pointerUp; don't let it hold the drift forever.
+        dragging = false
+        syncDrift() // re-init also re-runs the plugin's init
+      })
+    // reInit fires "reInit", which calls syncDrift.
+    const motionChange = () => api.reInit({ dragFree: !reduceMotion?.matches })
+    reduceMotion.addEventListener("change", motionChange)
+    // Don't spend a 60Hz animation loop on a strip nobody can see. A fast
+    // scroll can queue several entries; the last one is current.
+    const visibility = new IntersectionObserver((entries) => {
+      onScreen = entries[entries.length - 1].isIntersecting
+      syncDrift()
+    })
+    visibility.observe(viewportEl)
+    return () => {
+      visibility.disconnect()
+      reduceMotion?.removeEventListener("change", motionChange)
+      api.destroy()
+      embla = undefined
+    }
+  })
+
+  // Pointer events report the real input type even for a tap's compatibility
+  // mouse events, so only an actual mouse counts as hovering.
+  function hoverChange(e: PointerEvent, entering: boolean) {
+    if (e.pointerType !== "mouse") return
+    hovering = entering
+    syncDrift()
+  }
+  // A keyboard user holds it still by focusing an arrow. A mouse click also
+  // focuses the button but isn't :focus-visible, so it doesn't count until a
+  // key is pressed on it.
+  function focusChange(e: FocusEvent, entering: boolean) {
+    keyboardFocus = entering && (e.target as Element).matches(":focus-visible")
+    syncDrift()
+  }
+  function keyPressed() {
+    keyboardFocus = true
+    syncDrift()
+  }
+
+  function rotate(direction: 1 | -1) {
+    if (!embla) return
+    embla.plugins().autoScroll?.stop() // the step's "settle" resumes it
+    const jump = reduceMotion?.matches ?? false // step without animating
+    if (direction === 1) embla.scrollNext(jump)
+    else embla.scrollPrev(jump)
+  }
 
   const partners = [
     {
@@ -642,37 +783,61 @@
       Working with leading organizations to improve the lives of fishermen and
       protect the health of our oceans.
     </p>
-    <div class="relative">
-      <!-- Scroll track -->
+    <div
+      class="relative"
+      role="region"
+      aria-label="Partners"
+      onpointerenter={(e) => hoverChange(e, true)}
+      onpointerleave={(e) => hoverChange(e, false)}
+      onfocusin={(e) => focusChange(e, true)}
+      onfocusout={(e) => focusChange(e, false)}
+    >
+      <!-- Embla viewport > container > slides. The logos repeat COPIES times
+           so there is always enough strip to loop. -->
       <div
-        bind:this={trackEl}
-        class="partner-track flex gap-6 overflow-x-auto px-8 py-4"
+        bind:this={viewportEl}
+        class="overflow-hidden py-4 select-none cursor-grab active:cursor-grabbing"
       >
-        {#each partners as p}
-          <div
-            class="group relative flex-shrink-0 w-52 h-36 flex items-center justify-center p-6 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-default {p.darkBg
-              ? 'bg-base-100 group-hover:bg-[#1a3a5c]'
-              : 'bg-base-100'}"
-          >
-            <img
-              src={p.logo}
-              alt={p.alt}
-              class="h-16 md:h-20 object-contain transition-all duration-300 {p.invert
-                ? 'invert grayscale group-hover:invert-0 group-hover:grayscale-0'
-                : 'grayscale group-hover:grayscale-0'}"
-            />
-            <div
-              class="absolute inset-0 flex items-center justify-center bg-primary/95 text-primary-content rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4"
-            >
-              <p class="text-sm text-center font-medium">{p.description}</p>
-            </div>
-          </div>
-        {/each}
+        <div class="flex touch-pan-y">
+          {#each copies as copy}
+            {#each partners as p}
+              <!-- Embla sets a transform on this wrapper to loop it, so the
+                   card's own hover lift lives on the inner element. -->
+              <div
+                class="flex-none pl-6"
+                aria-hidden={copy > 0 ? "true" : undefined}
+              >
+                <div
+                  class="group relative w-52 h-36 flex items-center justify-center p-6 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 {p.darkBg
+                    ? 'bg-base-100 group-hover:bg-[#1a3a5c]'
+                    : 'bg-base-100'}"
+                >
+                  <img
+                    src={p.logo}
+                    draggable="false"
+                    alt={p.alt}
+                    class="h-16 md:h-20 object-contain transition-all duration-300 {p.invert
+                      ? 'invert grayscale group-hover:invert-0 group-hover:grayscale-0'
+                      : 'grayscale group-hover:grayscale-0'}"
+                  />
+                  <div
+                    class="absolute inset-0 flex items-center justify-center bg-primary/95 text-primary-content rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4"
+                  >
+                    <p class="text-sm text-center font-medium">
+                      {p.description}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            {/each}
+          {/each}
+        </div>
       </div>
       <!-- Left/right scroll buttons -->
       <button
         class="absolute left-1 top-1/2 -translate-y-1/2 z-10 btn btn-circle btn-sm bg-base-100/90 border-none shadow-md hover:bg-base-100"
-        onclick={() => trackEl.scrollBy({ left: -260, behavior: "smooth" })}
+        onclick={() => rotate(-1)}
+        onkeydown={keyPressed}
         aria-label="Scroll partners left"
       >
         <svg
@@ -690,7 +855,8 @@
       </button>
       <button
         class="absolute right-1 top-1/2 -translate-y-1/2 z-10 btn btn-circle btn-sm bg-base-100/90 border-none shadow-md hover:bg-base-100"
-        onclick={() => trackEl.scrollBy({ left: 260, behavior: "smooth" })}
+        onclick={() => rotate(1)}
+        onkeydown={keyPressed}
         aria-label="Scroll partners right"
       >
         <svg
@@ -756,22 +922,6 @@
       0 1px 2px rgb(15 23 42 / 0.35),
       0 2px 18px rgb(15 23 42 / 0.3);
   }
-  .partner-track {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-    scroll-snap-type: x mandatory;
-    justify-content: center;
-  }
-  .partner-track::-webkit-scrollbar {
-    display: none;
-  }
-  /* When content overflows, left-align so scroll works naturally */
-  @media (max-width: 1400px) {
-    .partner-track {
-      justify-content: flex-start;
-    }
-  }
-
   .hud-panel {
     background: rgba(10, 20, 40, 0.75);
     backdrop-filter: blur(12px);
